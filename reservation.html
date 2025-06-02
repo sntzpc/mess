@@ -28,30 +28,68 @@
     <h4 class="mb-3">Form Reservasi Kamar</h4>
     <div class="form-section">
       <form id="reservationForm">
+        <!-- 1) Data Pemesan -->
         <div class="mb-3">
           <label for="requesterName" class="form-label">Nama Pemesan</label>
-          <input type="text" class="form-control" id="requesterName" required />
+          <input
+            type="text"
+            class="form-control"
+            id="requesterName"
+            placeholder="Masukkan nama pemesan"
+            required
+          />
         </div>
         <div class="mb-3">
-          <label for="unit" class="form-label">Unit</label>
-          <input type="text" class="form-control" id="unit" required />
+          <label for="requesterUnit" class="form-label">Unit Pemesan</label>
+          <input
+            type="text"
+            class="form-control"
+            id="requesterUnit"
+            placeholder="Masukkan unit"
+            required
+          />
         </div>
         <div class="mb-3">
-          <label for="position" class="form-label">Jabatan</label>
-          <input type="text" class="form-control" id="position" required />
+          <label for="requesterPosition" class="form-label">Jabatan Pemesan</label>
+          <input
+            type="text"
+            class="form-control"
+            id="requesterPosition"
+            placeholder="Masukkan jabatan"
+            required
+          />
         </div>
+
+        <!-- 2) Jumlah Tamu -->
         <div class="mb-3">
+          <label for="numGuests" class="form-label">Jumlah Tamu</label>
+          <input
+            type="number"
+            class="form-control"
+            id="numGuests"
+            min="1"
+            placeholder="Masukkan jumlah tamu"
+            required
+          />
+        </div>
+
+        <!-- 3) Dynamic Guest Fields -->
+        <div id="guestFieldsContainer"></div>
+        <!-- nanti JS akan menyuntikkan field per guest di sini -->
+
+        <!-- 4) Agenda -->
+        <div class="mb-3 mt-3">
           <label for="agenda" class="form-label">Agenda</label>
-          <textarea class="form-control" id="agenda" rows="2" required></textarea>
+          <textarea
+            class="form-control"
+            id="agenda"
+            rows="2"
+            placeholder="Masukkan agenda"
+            required
+          ></textarea>
         </div>
-        <div class="mb-3">
-          <label for="gender" class="form-label">Gender (L/W)</label>
-          <select class="form-select" id="gender" required>
-            <option value="" selected disabled>Pilih</option>
-            <option value="L">Laki-laki</option>
-            <option value="W">Perempuan</option>
-          </select>
-        </div>
+
+        <!-- 5) Tanggal & Jam Check-In -->
         <div class="row g-3">
           <div class="col-md-6">
             <label for="checkinDate" class="form-label">Tanggal Masuk</label>
@@ -62,6 +100,8 @@
             <input type="time" class="form-control" id="checkinTime" required />
           </div>
         </div>
+
+        <!-- 6) Tanggal & Jam Check-Out -->
         <div class="row g-3 mt-2">
           <div class="col-md-6">
             <label for="checkoutDate" class="form-label">Tanggal Keluar</label>
@@ -72,18 +112,11 @@
             <input type="time" class="form-control" id="checkoutTime" required />
           </div>
         </div>
-        <div class="mb-3 mt-3">
-          <label for="numGuests" class="form-label">Jumlah Tamu</label>
-          <input
-            type="number"
-            class="form-control"
-            id="numGuests"
-            min="1"
-            placeholder="Misal: 1"
-            required
-          />
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Kirim Reservasi</button>
+
+        <!-- 7) Tombol Submit -->
+        <button type="submit" class="btn btn-primary w-100 mt-3">
+          Kirim Reservasi
+        </button>
       </form>
     </div>
   </div>
@@ -94,13 +127,12 @@
   <script src="js/utils.js"></script>
   <script src="js/reservation.js"></script>
   <script>
-    // Pastikan user sudah login
+    // Pastikan user sudah login dan tampilkan nama
     document.addEventListener('DOMContentLoaded', () => {
       checkSession();
-      // Tampilkan nama pemesan di navbar
-      document.getElementById('navUsername').innerText = sessionStorage.getItem('username');
-      // Inisialisasi form reservasi
-      initReservationForm();
+      document.getElementById('navUsername').innerText =
+        sessionStorage.getItem('username');
+      initReservationForm(); // inisialisasi form & dynamic guest fields
     });
   </script>
 </body>
