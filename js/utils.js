@@ -1,82 +1,76 @@
 /* File: frontend/js/utils.js */
 
-// 1. Ganti dengan URL Web App Anda (sesuai yang diperoleh saat deploy Code.gs)
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbw6u-wpxVHSzxqmcePw8q_jGcB1D61wJ6S7VSjCjY_mwGYIxM2v4mp0llvs-kk6FV_zpQ/exec';
+/**
+ * Menampilkan toast singkat di pojok kanan atas.
+ * message: teks yang ingin ditampilkan.
+ * type: 'success' | 'warning' | 'danger' | 'info' (sesuai kelas Bootstrap).
+ */
+function showAlert(message, type = 'info') {
+  // Buat container toast jika belum ada
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.style.position = 'fixed';
+    container.style.top = '1rem';
+    container.style.right = '1rem';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+  }
+
+  // Buat elemen toast
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-bg-${type} border-0 show`;
+  toast.role = 'alert';
+  toast.ariaLive = 'assertive';
+  toast.ariaAtomic = 'true';
+  toast.style.minWidth = '250px';
+  toast.style.marginBottom = '0.5rem';
+
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  // Buat agar toast hilang otomatis setelah 3 detik
+  setTimeout(() => {
+    bootstrap.Toast.getOrCreateInstance(toast).hide();
+    toast.addEventListener('hidden.bs.toast', () => {
+      toast.remove();
+    });
+  }, 3000);
+}
 
 /**
- * Membuat request JSONP ke Apps Script.
- * @param {string} action  – nama action (misal: 'login', 'addUser', 'getUsers', dsb.)
- * @param {Object} params  – object key:value untuk parameter tambahan
- * @param {string} callbackName – nama fungsi global yang akan dipanggil (string)
+ * Mengirim request JSONP ke GAS.
+ * action: nama action di GAS (misal 'addReservation', 'getReservations', dll).
+ * params: objek key:value yang akan dijadikan query params.
+ * callbackName: nama fungsi JS global yang akan dipanggil oleh JSONP.
  */
-function jsonpRequest(action, params, callbackName) {
-  // Bangun query string
-  params = params || {};
-  params.action = action;
-  params.callback = callbackName;
+function jsonpRequest(action, params = {}, callbackName) {
+  if (!action || !callbackName) {
+    console.error('jsonpRequest: action dan callbackName wajib diisi.');
+    return;
+  }
 
-  const esc = encodeURIComponent;
-  const query = Object.keys(params)
-    .map(k => esc(k) + '=' + esc(params[k]))
-    .join('&');
+  // Ganti dengan URL Web App GAS Anda (hasil "Deploy as web app").
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6u-wpxVHSzxqmcePw8q_jGcB1D61wJ6S7VSjCjY_mwGYIxM2v4mp0llvs-kk6FV_zpQ/exec';
 
-  const url = BASE_URL + '?' + query;
+  // Buat query string
+  const query = new URLSearchParams({ action, callback: callbackName, ...params }).toString();
+  const url = `${SCRIPT_URL}?${query}`;
+
   const script = document.createElement('script');
   script.src = url;
-  script.async = true;
-  script.onerror = function () {
+  script.onerror = () => {
     showAlert('Gagal memuat data dari server.', 'danger');
+    script.remove();
   };
+  script.onload = () => script.remove();
+
   document.body.appendChild(script);
-  // Setelah script dieksekusi, tag ini bisa dibiarkan (browser membersihkannya otomatis saat reload)
-}
-
-
-/**
- * Menampilkan Bootstrap Alert di atas konten
- * @param {string} message – teks pesan
- * @param {string} type    – 'success', 'danger', 'warning', 'info'
- */
-function showAlert(message, type = 'danger') {
-  // Jika sudah ada alert lain, buang dulu
-  const existing = document.querySelector('.alert-container');
-  if (existing) existing.remove();
-
-  const container = document.createElement('div');
-  container.className = 'alert-container';
-
-  const alertDiv = document.createElement('div');
-  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-  alertDiv.setAttribute('role', 'alert');
-  alertDiv.innerHTML = `
-    ${message}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  `;
-  container.appendChild(alertDiv);
-  document.body.appendChild(container);
-
-  // Setelah 4 detik, otomatis hilang
-  setTimeout(() => {
-    const btn = alertDiv.querySelector('.btn-close');
-    if (btn) btn.click();
-  }, 4000);
-}
-
-/**
- * Cek session (login). 
- * Jika tidak ada 'username' di sessionStorage, redirect ke login.html
- */
-function checkSession() {
-  const username = sessionStorage.getItem('username');
-  if (!username) {
-    window.location.href = 'login.html';
-  }
-}
-
-/**
- * Logout user: hapus sessionStorage, redirect ke login.html
- */
-function logout() {
-  sessionStorage.clear();
-  window.location.href = 'login.html';
 }

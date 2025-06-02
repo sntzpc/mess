@@ -1,7 +1,7 @@
 /* File: frontend/js/reservation.js */
 
 /**
- * JSONP callback untuk addReservation
+ * Callback JSONP untuk addReservation
  */
 window.handleAddReservationResponse = function(resp) {
   if (resp.status === 'success') {
@@ -9,93 +9,165 @@ window.handleAddReservationResponse = function(resp) {
       'Reservasi terkirim (ID: ' + resp.reservation_id + '), menunggu persetujuan admin.',
       'success'
     );
+    // Reset form
     document.getElementById('reservationForm').reset();
-    // Kosongkan juga container guest fields kalau ada
-    document.getElementById('guestFieldsContainer').innerHTML = '';
+    document.getElementById('guestsContainer').innerHTML = '';
+    localStorage.removeItem('guestDetails');
   } else {
     showAlert(resp.message, 'danger');
   }
 };
 
 /**
- * Membuat atau menghapus field per guest sesuai jumlah.
- * @param {number} count – jumlah tamu yang diinginkan
- */
-function renderGuestFields(count) {
-  const container = document.getElementById('guestFieldsContainer');
-  container.innerHTML = ''; // kosongkan dulu
-
-  if (count < 1) return;
-
-  for (let i = 1; i <= count; i++) {
-    // Setiap tamu butuh: Nama Tamu, Unit, Jabatan, Gender
-    const div = document.createElement('div');
-    div.className = 'border rounded p-3 mb-3';
-    div.innerHTML = `
-      <h6 class="mb-2">Tamu #${i}</h6>
-      <div class="mb-2">
-        <label for="guestName_${i}" class="form-label">Nama Tamu</label>
-        <input type="text" class="form-control" id="guestName_${i}" required />
-      </div>
-      <div class="mb-2">
-        <label for="guestUnit_${i}" class="form-label">Unit Tamu</label>
-        <input type="text" class="form-control" id="guestUnit_${i}" required />
-      </div>
-      <div class="mb-2">
-        <label for="guestPosition_${i}" class="form-label">Jabatan Tamu</label>
-        <input type="text" class="form-control" id="guestPosition_${i}" required />
-      </div>
-      <div class="mb-2">
-        <label for="guestGender_${i}" class="form-label">Gender Tamu</label>
-        <select class="form-select" id="guestGender_${i}" required>
-          <option value="" disabled selected>Pilih gender</option>
-          <option value="L">Laki-laki</option>
-          <option value="W">Perempuan</option>
-        </select>
-      </div>
-    `;
-    container.appendChild(div);
-  }
-}
-
-/**
  * Inisialisasi form reservasi:
- * 1) Tatap listener pada #numGuests
- * 2) Tatap listener submit form
+ * 1) Klik Generate → buat blok detail tiap tamu
+ * 2) Submit → validasi semua field, lalu kirim JSONP
  */
 function initReservationForm() {
   const form = document.getElementById('reservationForm');
   const numGuestsInput = document.getElementById('numGuests');
+  const generateBtn = document.getElementById('generateGuestsBtn');
+  const guestsContainer = document.getElementById('guestsContainer');
 
-  if (!form || !numGuestsInput) return;
+  if (!form || !numGuestsInput || !generateBtn || !guestsContainer) return;
 
-  // Ketika jumlah tamu berubah → render guest fields
-  numGuestsInput.addEventListener('input', function() {
-    const count = parseInt(this.value, 10) || 0;
-    if (count > 0) {
-      renderGuestFields(count);
-    } else {
-      document.getElementById('guestFieldsContainer').innerHTML = '';
-    }
+  // Jika user merubah angka Jumlah Tamu → bersihkan blok lama
+  numGuestsInput.addEventListener('input', () => {
+    guestsContainer.innerHTML = '';
+    localStorage.removeItem('guestDetails');
   });
 
-  // Saat form disubmit
-  form.addEventListener('submit', function(e) {
+  // 1) Klik "Generate Fields" → buat blok detail tamu
+  generateBtn.addEventListener('click', () => {
+    const count = parseInt(numGuestsInput.value, 10) || 0;
+    if (count < 1) {
+      showAlert('Jumlah Tamu harus diisi minimal 1 sebelum generate.', 'warning');
+      return;
+    }
+
+    // Kosongkan container lama
+    guestsContainer.innerHTML = '';
+    localStorage.removeItem('guestDetails');
+
+    // Buat blok input detail per tamu
+    for (let i = 1; i <= count; i++) {
+      const div = document.createElement('div');
+      div.className = 'guest-block';
+      div.innerHTML = `
+        <h6>Tamu #${i}</h6>
+        <div class="mb-2">
+          <label for="guestName_${i}" class="form-label">Nama Tamu</label>
+          <input
+            type="text"
+            class="form-control"
+            id="guestName_${i}"
+            placeholder="Nama Tamu #${i}"
+            required
+          />
+        </div>
+        <div class="mb-2">
+          <label for="guestUnit_${i}" class="form-label">Unit Tamu</label>
+          <input
+            type="text"
+            class="form-control"
+            id="guestUnit_${i}"
+            placeholder="Unit Tamu #${i}"
+            required
+          />
+        </div>
+        <div class="mb-2">
+          <label for="guestPosition_${i}" class="form-label">Jabatan Tamu</label>
+          <input
+            type="text"
+            class="form-control"
+            id="guestPosition_${i}"
+            placeholder="Jabatan Tamu #${i}"
+            required
+          />
+        </div>
+        <div class="mb-2">
+          <label for="guestGender_${i}" class="form-label">Gender Tamu</label>
+          <select class="form-select" id="guestGender_${i}" required>
+            <option value="" disabled selected>Pilih Gender</option>
+            <option value="L">Laki-laki</option>
+            <option value="W">Perempuan</option>
+          </select>
+        </div>
+      `;
+      guestsContainer.appendChild(div);
+    }
+
+    showAlert(`Silakan isi detail untuk ${count} tamu di bawah ini.`, 'info');
+  });
+
+  // 2) Saat form disubmit → validasi dan kirim JSONP
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    // 1) Validasi Pemesan
-    const requester_name = document
-      .getElementById('requesterName')
-      .value.trim();
+    // Ambil value dari field umum
+    const requester_name = document.getElementById('requesterName').value.trim();
     const requesterUnit = document.getElementById('requesterUnit').value.trim();
     const requesterPosition = document
       .getElementById('requesterPosition')
       .value.trim();
-
-    // 2) Jumlah tamu
     const numGuests = parseInt(numGuestsInput.value, 10) || 0;
+    const agenda = document.getElementById('agenda').value.trim();
+    const checkin_date = document.getElementById('checkinDate').value;
+    const checkin_time = document.getElementById('checkinTime').value;
+    const checkout_date = document.getElementById('checkoutDate').value;
+    const checkout_time = document.getElementById('checkoutTime').value;
 
-    // 3) Ambil data tiap tamu
+    // Validasi "field umum"
+    if (!requester_name) {
+      showAlert('Nama Pemesan wajib diisi.', 'warning');
+      return;
+    }
+    if (!requesterUnit) {
+      showAlert('Unit Pemesan wajib diisi.', 'warning');
+      return;
+    }
+    if (!requesterPosition) {
+      showAlert('Jabatan Pemesan wajib diisi.', 'warning');
+      return;
+    }
+    if (numGuests < 1) {
+      showAlert('Jumlah Tamu wajib diisi minimal 1.', 'warning');
+      return;
+    }
+    if (!agenda) {
+      showAlert('Agenda wajib diisi.', 'warning');
+      return;
+    }
+    if (!checkin_date || !checkin_time) {
+      showAlert('Tanggal dan Jam Masuk wajib diisi.', 'warning');
+      return;
+    }
+    if (!checkout_date || !checkout_time) {
+      showAlert('Tanggal dan Jam Keluar wajib diisi.', 'warning');
+      return;
+    }
+    if (
+      new Date(checkout_date + ' ' + checkout_time) <
+      new Date(checkin_date + ' ' + checkin_time)
+    ) {
+      showAlert(
+        'Tanggal/Jam Keluar harus sama atau setelah Tanggal/Jam Masuk.',
+        'warning'
+      );
+      return;
+    }
+
+    // Validasi detail tamu
+    const blocks = guestsContainer.querySelectorAll('.guest-block');
+    if (blocks.length !== numGuests) {
+      showAlert(
+        'Klik tombol “Generate Fields” dan isi detail semua tamu sebelum submit.',
+        'warning'
+      );
+      return;
+    }
+
+    // Kumpulkan detail tamu ke array
     const guests = [];
     for (let i = 1; i <= numGuests; i++) {
       const nameEl = document.getElementById(`guestName_${i}`);
@@ -113,10 +185,7 @@ function initReservationForm() {
         !posEl.value.trim() ||
         !genEl.value
       ) {
-        showAlert(
-          `Semua field pada Tamu #${i} harus diisi lengkap.`,
-          'warning'
-        );
+        showAlert(`Mohon isi semua field untuk Tamu #${i}.`, 'warning');
         return;
       }
 
@@ -128,54 +197,20 @@ function initReservationForm() {
       });
     }
 
-    // 4) Agenda + tanggal/jam
-    const agenda = document.getElementById('agenda').value.trim();
-    const checkin_date = document.getElementById('checkinDate').value;
-    const checkin_time = document.getElementById('checkinTime').value;
-    const checkout_date = document.getElementById('checkoutDate').value;
-    const checkout_time = document.getElementById('checkoutTime').value;
-
-    // Validasi sederhana
-    if (
-      !requester_name ||
-      !requesterUnit ||
-      !requesterPosition ||
-      numGuests < 1 ||
-      !agenda ||
-      !checkin_date ||
-      !checkin_time ||
-      !checkout_date ||
-      !checkout_time
-    ) {
-      showAlert('Mohon isi semua field yang dibutuhkan.', 'warning');
-      return;
-    }
-    if (
-      new Date(checkout_date + ' ' + checkout_time) <
-      new Date(checkin_date + ' ' + checkin_time)
-    ) {
-      showAlert(
-        'Tanggal/jam keluar harus sama atau setelah tanggal/jam masuk.',
-        'warning'
-      );
-      return;
-    }
-
-    // 5) Kirim via JSONP
-    // Kita kirimkan guests sebagai JSON-stringified
+    // Jika semua valid → kirim JSONP
     jsonpRequest(
       'addReservation',
       {
-        requester_name: requester_name,
-        requester_unit: requesterUnit,
+        requester_name:     requester_name,
+        requester_unit:     requesterUnit,
         requester_position: requesterPosition,
-        num_guests: numGuests,
-        guest_details: JSON.stringify(guests),
-        agenda: agenda,
-        checkin_date: checkin_date,
-        checkin_time: checkin_time,
-        checkout_date: checkout_date,
-        checkout_time: checkout_time
+        num_guests:         numGuests,
+        guest_details:      JSON.stringify(guests),
+        agenda:             agenda,
+        checkin_date:       checkin_date,
+        checkin_time:       checkin_time,
+        checkout_date:      checkout_date,
+        checkout_time:      checkout_time
       },
       'handleAddReservationResponse'
     );

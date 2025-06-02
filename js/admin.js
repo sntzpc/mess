@@ -1,15 +1,16 @@
 /* File: frontend/js/admin.js */
 
 /**
- * JSONP callback untuk getReservations
+ * Callback JSONP untuk getReservations
  */
-window.handleGetReservationsResponse = function(resp) {
+window.handleGetReservationsResponse = function (resp) {
   if (resp.status !== 'success') {
     showAlert(resp.message, 'danger');
     return;
   }
   const data = resp.reservations;
 
+  // Hitung jumlah tiap status
   const pendingCount = data.filter((r) => r.status === 'Pending').length;
   const approvedCount = data.filter((r) => r.status === 'Approved').length;
   const checkedInCount = data.filter((r) => r.status === 'Checked-In').length;
@@ -20,6 +21,7 @@ window.handleGetReservationsResponse = function(resp) {
   document.getElementById('countCheckedIn').innerText = checkedInCount;
   document.getElementById('countCheckedOut').innerText = checkedOutCount;
 
+  // Render isi tabel per tab
   renderTable('Pending', data.filter((r) => r.status === 'Pending'));
   renderTable('Approved', data.filter((r) => r.status === 'Approved'));
   renderTable('Checked-In', data.filter((r) => r.status === 'Checked-In'));
@@ -27,37 +29,32 @@ window.handleGetReservationsResponse = function(resp) {
 };
 
 /**
- * Memuat statistik dashboard
+ * Memuat data statistik & tabel reservasi
  */
 function loadDashboardStats() {
   jsonpRequest('getReservations', {}, 'handleGetReservationsResponse');
 }
 
 /**
- * Memuat semua reservasi (termasuk render tabel)
- */
-function loadAllReservations() {
-  jsonpRequest('getReservations', {}, 'handleGetReservationsResponse');
-}
-
-/**
- * Render data pada tabel berdasarkan status
+ * Render data di dalam tabel berdasarkan status
  */
 function renderTable(status, listData) {
-  let tableBodyId = '';
-  if (status === 'Pending') tableBodyId = 'tablePending';
-  else if (status === 'Approved') tableBodyId = 'tableApproved';
-  else if (status === 'Checked-In') tableBodyId = 'tableCheckedIn';
-  else if (status === 'Checked-Out') tableBodyId = 'tableCheckedOut';
+  let tableId = '';
+  if (status === 'Pending') tableId = 'tablePending';
+  else if (status === 'Approved') tableId = 'tableApproved';
+  else if (status === 'Checked-In') tableId = 'tableCheckedIn';
+  else if (status === 'Checked-Out') tableId = 'tableCheckedOut';
   else return;
 
-  const tbody = document.querySelector(`#${tableBodyId} tbody`);
+  const tbody = document.querySelector(`#${tableId} tbody`);
   tbody.innerHTML = '';
 
   if (listData.length === 0) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="${
-      status === 'Approved' || status === 'Checked-In' ? 10 : 9
+      status === 'Approved' || status === 'Checked-In' || status === 'Checked-Out'
+        ? 10
+        : 9
     }" class="text-center">Tidak ada data.</td>`;
     tbody.appendChild(tr);
     return;
@@ -68,7 +65,13 @@ function renderTable(status, listData) {
     const checkInLabel = `${r.checkin_date} ${r.checkin_time}`;
     const checkOutLabel = `${r.checkout_date} ${r.checkout_time}`;
     const assignedRoom = r.assigned_room || '-';
+    const guestsCount = r.num_guests || r.numGuests || '-';
 
+    // Ambil unit/jabatan yang benar
+    const unit = r.requester_unit || r.unit || '-';
+    const position = r.requester_position || r.position || '-';
+
+    // Tombol aksi berdasarkan status
     let actionButtons = '';
     if (status === 'Pending') {
       actionButtons = `
@@ -90,19 +93,13 @@ function renderTable(status, listData) {
     tr.innerHTML = `
       <td>${idx + 1}</td>
       <td>${r.requester_name}</td>
-      <td>${r.unit}</td>
-      <td>${r.position}</td>
+      <td>${unit}</td>
+      <td>${position}</td>
       <td>${r.agenda}</td>
       <td>${checkInLabel}</td>
       <td>${checkOutLabel}</td>
-      <td>${r.num_guests}</td>
-      ${
-        status === 'Approved' ||
-        status === 'Checked-In' ||
-        status === 'Checked-Out'
-          ? `<td>${assignedRoom}</td>`
-          : ''
-      }
+      <td>${guestsCount}</td>
+      ${status === 'Pending' ? '' : `<td>${assignedRoom}</td>`}
       <td>${actionButtons}</td>
     `;
     tbody.appendChild(tr);
@@ -110,7 +107,7 @@ function renderTable(status, listData) {
 }
 
 /**
- * Meminta input assigned_room lalu panggil action=approveReservation
+ * Prompt input assigned_room, lalu panggil approveReservation
  */
 function promptApprove(reservation_id) {
   const room = prompt(
@@ -134,19 +131,19 @@ function promptApprove(reservation_id) {
 }
 
 /**
- * JSONP callback untuk approveReservation
+ * Callback JSONP untuk approveReservation
  */
-window.handleApproveResponse = function(resp) {
+window.handleApproveResponse = function (resp) {
   if (resp.status === 'success') {
     showAlert('Reservasi berhasil disetujui.', 'success');
-    loadAllReservations();
+    loadDashboardStats();
   } else {
     showAlert(resp.message, 'danger');
   }
 };
 
 /**
- * Tolak reservasi
+ * Menolak reservasi
  */
 function rejectReservation(reservation_id) {
   if (!confirm('Yakin ingin menolak reservasi ini?')) return;
@@ -161,12 +158,12 @@ function rejectReservation(reservation_id) {
 }
 
 /**
- * JSONP callback untuk rejectReservation
+ * Callback JSONP untuk rejectReservation
  */
-window.handleRejectResponse = function(resp) {
+window.handleRejectResponse = function (resp) {
   if (resp.status === 'success') {
     showAlert('Reservasi berhasil ditolak.', 'success');
-    loadAllReservations();
+    loadDashboardStats();
   } else {
     showAlert(resp.message, 'danger');
   }
@@ -188,12 +185,12 @@ function checkInReservation(reservation_id) {
 }
 
 /**
- * JSONP callback untuk checkIn
+ * Callback JSONP untuk checkIn
  */
-window.handleCheckInResponse = function(resp) {
+window.handleCheckInResponse = function (resp) {
   if (resp.status === 'success') {
     showAlert('Check-In berhasil.', 'success');
-    loadAllReservations();
+    loadDashboardStats();
   } else {
     showAlert(resp.message, 'danger');
   }
@@ -215,12 +212,12 @@ function checkOutReservation(reservation_id) {
 }
 
 /**
- * JSONP callback untuk checkOut
+ * Callback JSONP untuk checkOut
  */
-window.handleCheckOutResponse = function(resp) {
+window.handleCheckOutResponse = function (resp) {
   if (resp.status === 'success') {
     showAlert('Check-Out berhasil.', 'success');
-    loadAllReservations();
+    loadDashboardStats();
   } else {
     showAlert(resp.message, 'danger');
   }
