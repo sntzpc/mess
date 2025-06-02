@@ -1,10 +1,9 @@
 /* File: frontend/js/users.js */
 
 /**
- * handleGetUsersResponse(resp)
- * – Callback JSONP untuk action=getUsers
+ * JSONP callback untuk getUsers
  */
-function handleGetUsersResponse(resp) {
+window.handleGetUsersResponse = function(resp) {
   if (resp.status !== 'success') {
     showAlert(resp.message, 'danger');
     return;
@@ -33,24 +32,22 @@ function handleGetUsersResponse(resp) {
     `;
     tbody.appendChild(tr);
   });
-}
+};
 
 /**
- * loadUsers()
- * – Panggil action=getUsers via JSONP
+ * Memuat daftar user via JSONP
  */
 function loadUsers() {
   jsonpRequest('getUsers', {}, 'handleGetUsersResponse');
 }
 
 /**
- * addUser()
- * – Baca nilai dari form Add User & kirim action=addUser
+ * Tambah user baru
  */
 function addUser() {
   const uname = document.getElementById('addUsername').value.trim();
-  const pwd   = document.getElementById('addPassword').value.trim();
-  const role  = document.getElementById('addRole').value;
+  const pwd = document.getElementById('addPassword').value.trim();
+  const role = document.getElementById('addRole').value;
 
   if (!uname || !pwd || !role) {
     showAlert('Semua field wajib diisi.', 'warning');
@@ -59,32 +56,34 @@ function addUser() {
 
   jsonpRequest(
     'addUser',
-    { username: uname, password: pwd, role: role, admin_user: sessionStorage.getItem('username') },
+    {
+      username: uname,
+      password: pwd,
+      role: role,
+      admin_user: sessionStorage.getItem('username'),
+    },
     'handleAddUserResponse'
   );
 }
 
 /**
- * Callback untuk addUser
+ * JSONP callback untuk addUser
  */
-function handleAddUserResponse(resp) {
+window.handleAddUserResponse = function(resp) {
   if (resp.status === 'success') {
     showAlert('User berhasil ditambahkan.', 'success');
-    // Tutup modal
     const modalEl = document.getElementById('modalAddUser');
     const modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
-    // Reset form
     document.getElementById('formAddUser').reset();
     loadUsers();
   } else {
     showAlert(resp.message, 'danger');
   }
-}
+};
 
 /**
- * showEditUserModal(username, role)
- * – Tampilkan modal Edit User dengan data yang diisi sesuai user terpilih
+ * Tampilkan modal Edit User dan isi form dengan data user lama
  */
 function showEditUserModal(username, role) {
   document.getElementById('editUsernameOld').value = username;
@@ -97,13 +96,12 @@ function showEditUserModal(username, role) {
 }
 
 /**
- * updateUser()
- * – Ambil data dari form Edit User & kirim action=updateUser
+ * Update data user
  */
 function updateUser() {
   const oldUsername = document.getElementById('editUsernameOld').value;
   const newPassword = document.getElementById('editPassword').value;
-  const newRole     = document.getElementById('editRole').value;
+  const newRole = document.getElementById('editRole').value;
 
   if (!oldUsername) {
     showAlert('Username lama tidak ditemukan.', 'danger');
@@ -116,15 +114,20 @@ function updateUser() {
 
   jsonpRequest(
     'updateUser',
-    { username: oldUsername, newPassword: newPassword, newRole: newRole, admin_user: sessionStorage.getItem('username') },
+    {
+      username: oldUsername,
+      newPassword: newPassword,
+      newRole: newRole,
+      admin_user: sessionStorage.getItem('username'),
+    },
     'handleUpdateUserResponse'
   );
 }
 
 /**
- * Callback untuk updateUser
+ * JSONP callback untuk updateUser
  */
-function handleUpdateUserResponse(resp) {
+window.handleUpdateUserResponse = function(resp) {
   if (resp.status === 'success') {
     showAlert('User berhasil diperbarui.', 'success');
     const modalEl = document.getElementById('modalEditUser');
@@ -134,29 +137,31 @@ function handleUpdateUserResponse(resp) {
   } else {
     showAlert(resp.message, 'danger');
   }
-}
+};
 
 /**
- * deleteUser(username)
- * – Konfirmasi lalu kirim action=deleteUser
+ * Hapus user
  */
 function deleteUser(username) {
   if (!confirm('Yakin ingin menghapus user "' + username + '"?')) return;
   jsonpRequest(
     'deleteUser',
-    { username: username, admin_user: sessionStorage.getItem('username') },
+    {
+      username: username,
+      admin_user: sessionStorage.getItem('username'),
+    },
     'handleDeleteUserResponse'
   );
 }
 
 /**
- * Callback untuk deleteUser
+ * JSONP callback untuk deleteUser
  */
-function handleDeleteUserResponse(resp) {
+window.handleDeleteUserResponse = function(resp) {
   if (resp.status === 'success') {
     showAlert('User berhasil dihapus.', 'success');
     loadUsers();
   } else {
     showAlert(resp.message, 'danger');
   }
-}
+};
