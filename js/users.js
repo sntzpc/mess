@@ -190,10 +190,35 @@ function loadProfile() {
 /**
  * Load Log Sistem (Admin)
  */
+// js/users.js (bagian Log Sistem)
+
+// Variabel global untuk menyimpan data log dan status paging
+let logsData = [];
+let filteredLogs = [];
+let currentPage = 1;
+let pageSize = 20; // default 20
+let totalPages = 0;
+
+/**
+ * Load Log Sistem (Admin) — versi baru dengan paging, search, dan page size
+ */
 function loadLogs() {
   const container = document.getElementById("contentLogs");
   container.innerHTML = `
     <h4>Log Sistem</h4>
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <input type="text" id="searchLogs" class="form-control" placeholder="Cari log...">
+      </div>
+      <div class="col-md-2">
+        <select id="selectPageSize" class="form-select">
+          <option value="20" selected>20 / halaman</option>
+          <option value="50">50 / halaman</option>
+          <option value="100">100 / halaman</option>
+          <option value="500">500 / halaman</option>
+        </select>
+      </div>
+    </div>
     <table class="table table-striped" id="tblLogs">
       <thead class="table-light">
         <tr>
@@ -206,7 +231,25 @@ function loadLogs() {
       </thead>
       <tbody></tbody>
     </table>
+    <nav>
+      <ul class="pagination" id="paginationLogs"></ul>
+    </nav>
   `;
+
+  // Event listener untuk pencarian (search)
+  document.getElementById("searchLogs").addEventListener("input", () => {
+    currentPage = 1;
+    applySearchAndRender();
+  });
+
+  // Event listener untuk mengganti page size
+  document.getElementById("selectPageSize").addEventListener("change", (e) => {
+    pageSize = parseInt(e.target.value, 10);
+    currentPage = 1;
+    applySearchAndRender();
+  });
+
+  // Fetch data log via JSONP
   const callbackName = "jsonpFetchLogs_" + Date.now();
   jsonpRequest(
     SCRIPT_URL,
@@ -214,20 +257,54 @@ function loadLogs() {
     callbackName,
     (result) => {
       if (result.success) {
-        renderLogsTable(result.data);
+        logsData = result.data || [];
+        applySearchAndRender();
       }
     },
-    (err) => { console.error(err); }
+    (err) => { console.error("Error fetchLogs JSONP:", err); }
   );
 }
 
 /**
- * Render tabel log
+ * Terapkan filter pencarian dan hitung jumlah halaman, lalu render tabel + pagination
  */
-function renderLogsTable(data) {
+function applySearchAndRender() {
+  const term = document.getElementById("searchLogs").value.trim().toLowerCase();
+  if (term) {
+    filteredLogs = logsData.filter(log => {
+      return (
+        (log.log_id || "").toLowerCase().includes(term) ||
+        (log.reservation_id || "").toLowerCase().includes(term) ||
+        (log.action || "").toLowerCase().includes(term) ||
+        (log.timestamp || "").toLowerCase().includes(term) ||
+        (log.admin_user || "").toLowerCase().includes(term)
+      );
+    });
+  } else {
+    filteredLogs = logsData.slice();
+  }
+  totalPages = Math.ceil(filteredLogs.length / pageSize) || 1;
+  renderLogsTablePaginated();
+  renderPaginationControls();
+}
+
+/**
+ * Render baris‐baris tabel hanya untuk halaman currentPage
+ */
+function renderLogsTablePaginated() {
   const tbody = document.querySelector("#tblLogs tbody");
   tbody.innerHTML = "";
-  data.forEach((log) => {
+
+  if (!filteredLogs.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tidak ada data log</td></tr>`;
+    return;
+  }
+
+  const start = (currentPage - 1) * pageSize;
+  const end   = start + pageSize;
+  const pageData = filteredLogs.slice(start, end);
+
+  pageData.forEach((log) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${log.log_id}</td>
@@ -239,3 +316,80 @@ function renderLogsTable(data) {
     tbody.appendChild(tr);
   });
 }
+
+/**
+ * Render kontrol pagination dengan ellipsis jika totalPages > 5
+ */
+function renderPaginationControls() {
+  const ul = document.getElementById("paginationLogs");
+  ul.innerHTML = "";
+
+  function createPageItem(page, text, disabled = false, active = false) {
+    const li = document.createElement("li");
+    li.className = "page-item" + (disabled ? " disabled" : "") + (active ? " active" : "");
+    const a = document.createElement("a");
+    a.className = "page-link";
+    a.href = "#";
+    a.textContent = text;
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page !== currentPage && !disabled) {
+        currentPage = page;
+        renderLogsTablePaginated();
+        renderPaginationControls();
+      }
+    });
+    li.appendChild(a);
+    return li;
+  }
+
+  // Tombol “Previous”
+  const prevDisabled = currentPage === 1;
+  ul.appendChild(createPageItem(currentPage - 1, "«", prevDisabled, false));
+
+  if (totalPages <= 5) {
+    // Jika total halaman ≤ 5, tampilkan semua
+    for (let p = 1; p <= totalPages; p++) {
+      ul.appendChild(createPageItem(p, p, false, p === currentPage));
+    }
+  } else {
+    // Tampilkan halaman 1
+    ul.appendChild(createPageItem(1, "1", false, currentPage === 1));
+
+    const left  = Math.max(2, currentPage - 1);
+    const right = Math.min(totalPages - 1, currentPage + 1);
+
+    if (left > 2) {
+      const li = document.createElement("li");
+      li.className = "page-item disabled";
+      li.innerHTML = `<span class="page-link">…</span>`;
+      ul.appendChild(li);
+    }
+
+    for (let p = left; p <= right; p++) {
+      ul.appendChild(createPageItem(p, p, false, p === currentPage));
+    }
+
+    if (right < totalPages - 1) {
+      const li = document.createElement("li");
+      li.className = "page-item disabled";
+      li.innerHTML = `<span class="page-link">…</span>`;
+      ul.appendChild(li);
+    }
+
+    // Tampilkan halaman terakhir
+    ul.appendChild(createPageItem(totalPages, totalPages, false, currentPage === totalPages));
+  }
+
+  // Tombol “Next”
+  const nextDisabled = currentPage === totalPages;
+  ul.appendChild(createPageItem(currentPage + 1, "»", nextDisabled, false));
+}
+
+/* 
+  Setelah ini, pastikan di main.js atau di tempat manapun Anda
+  memanggil:
+    showTab("Logs");
+    loadLogs();
+  ketika user mengklik tab “Log Sistem”.
+*/
