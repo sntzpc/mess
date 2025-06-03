@@ -3,53 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login | Mess SNTZ</title>
-  <!-- Bootstrap CSS -->
+  <title>Login Mess SNTZ</title>
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet"
   />
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/custom.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  
+  <!-- BEGIN: Definisikan SCRIPT_URL sebelum login.js -->
+  <script>
+    // Ganti dengan Web App URL Anda setelah deploy di GAS
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBnXpw-t6qRWs2z_QuhoLucpQb2ysErGa4aywWzdr2OaWI8zaDXgLCFo0KaH8xOWIl1A/exec';
+  </script>
+  <!-- END: Definisikan SCRIPT_URL -->
 </head>
-<body class="bg-light">
-  <div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 100vh;">
-    <div class="form-section w-100" style="max-width: 400px;">
-      <h3 class="mb-4 text-center">Masuk ke Mess SNTZ</h3>
+<body>
+  <div class="container vh-100 d-flex justify-content-center align-items-center">
+    <div class="card p-4" style="min-width: 320px;">
+      <h5 class="card-title text-center mb-3">Login Mess SNTZ</h5>
       <form id="loginForm">
         <div class="mb-3">
           <label for="username" class="form-label">Username</label>
-          <input
-            type="text"
-            class="form-control"
-            id="username"
-            placeholder="Masukkan username"
-            required
-          />
+          <input type="text" id="username" class="form-control" required />
         </div>
         <div class="mb-3">
           <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            placeholder="Masukkan password"
-            required
-          />
+          <input type="password" id="password" class="form-control" required />
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
+        <div id="loginError" class="mt-2 text-danger" style="display: none;"></div>
       </form>
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle (Popper + Bootstrap) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Utils & Auth -->
   <script src="js/utils.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-    // Setelah DOM siap, inisialisasi login form
-    document.addEventListener('DOMContentLoaded', initLoginForm);
-  </script>
+  <script src="js/login.js"></script>
 </body>
 </html>

@@ -1,218 +1,427 @@
-/* File: frontend/js/reservation.js */
+// js/reservation.js
+
+// Setelah DOM siap, event untuk generate form tamu & upload file diinisiasi di loadReservationForm
 
 /**
- * Callback JSONP untuk addReservation
+ * Tampilkan form reservasi di tab "Reservasi"
  */
-window.handleAddReservationResponse = function(resp) {
-  if (resp.status === 'success') {
-    showAlert(
-      'Reservasi terkirim (ID: ' + resp.reservation_id + '), menunggu persetujuan admin.',
-      'success'
-    );
-    // Reset form
-    document.getElementById('reservationForm').reset();
-    document.getElementById('guestsContainer').innerHTML = '';
-    localStorage.removeItem('guestDetails');
-  } else {
-    showAlert(resp.message, 'danger');
-  }
-};
-
-/**
- * Inisialisasi form reservasi:
- * 1) Klik Generate → buat blok detail tiap tamu
- * 2) Submit → validasi semua field, lalu kirim JSONP
- */
-function initReservationForm() {
-  const form = document.getElementById('reservationForm');
-  const numGuestsInput = document.getElementById('numGuests');
-  const generateBtn = document.getElementById('generateGuestsBtn');
-  const guestsContainer = document.getElementById('guestsContainer');
-
-  if (!form || !numGuestsInput || !generateBtn || !guestsContainer) return;
-
-  // Jika user merubah angka Jumlah Tamu → bersihkan blok lama
-  numGuestsInput.addEventListener('input', () => {
-    guestsContainer.innerHTML = '';
-    localStorage.removeItem('guestDetails');
-  });
-
-  // 1) Klik "Generate Fields" → buat blok detail tamu
-  generateBtn.addEventListener('click', () => {
-    const count = parseInt(numGuestsInput.value, 10) || 0;
-    if (count < 1) {
-      showAlert('Jumlah Tamu harus diisi minimal 1 sebelum generate.', 'warning');
-      return;
-    }
-
-    // Kosongkan container lama
-    guestsContainer.innerHTML = '';
-    localStorage.removeItem('guestDetails');
-
-    // Buat blok input detail per tamu
-    for (let i = 1; i <= count; i++) {
-      const div = document.createElement('div');
-      div.className = 'guest-block';
-      div.innerHTML = `
-        <h6>Tamu #${i}</h6>
-        <div class="mb-2">
-          <label for="guestName_${i}" class="form-label">Nama Tamu</label>
-          <input
-            type="text"
-            class="form-control"
-            id="guestName_${i}"
-            placeholder="Nama Tamu #${i}"
-            required
-          />
+function loadReservationForm() {
+  const container = document.getElementById("contentReservations");
+  container.innerHTML = `
+    <h4>Form Reservasi</h4>
+    <form id="reservationForm">
+      <!-- Data Pemesan -->
+      <div class="row mb-3">
+        <div class="col">
+          <label for="reqName" class="form-label">Nama Pemesan</label>
+          <input type="text" class="form-control" id="reqName" required>
         </div>
-        <div class="mb-2">
-          <label for="guestUnit_${i}" class="form-label">Unit Tamu</label>
-          <input
-            type="text"
-            class="form-control"
-            id="guestUnit_${i}"
-            placeholder="Unit Tamu #${i}"
-            required
-          />
+        <div class="col">
+          <label for="reqUnit" class="form-label">Unit</label>
+          <input type="text" class="form-control" id="reqUnit" required>
         </div>
-        <div class="mb-2">
-          <label for="guestPosition_${i}" class="form-label">Jabatan Tamu</label>
-          <input
-            type="text"
-            class="form-control"
-            id="guestPosition_${i}"
-            placeholder="Jabatan Tamu #${i}"
-            required
-          />
+        <div class="col">
+          <label for="reqPosition" class="form-label">Jabatan</label>
+          <input type="text" class="form-control" id="reqPosition" required>
         </div>
-        <div class="mb-2">
-          <label for="guestGender_${i}" class="form-label">Gender Tamu</label>
-          <select class="form-select" id="guestGender_${i}" required>
-            <option value="" disabled selected>Pilih Gender</option>
-            <option value="L">Laki-laki</option>
-            <option value="W">Perempuan</option>
+      </div>
+      <!-- Jumlah Tamu -->
+      <div class="row mb-3">
+        <div class="col-4">
+          <label for="numGuests" class="form-label">Jumlah Tamu</label>
+          <select id="numGuests" class="form-select" required>
+            <option value="" disabled selected>Pilih jumlah</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
           </select>
         </div>
-      `;
-      guestsContainer.appendChild(div);
-    }
+      </div>
+      <div id="guestsContainer"></div>
+      <!-- Upload CSV/Excel Tamu -->
+      <div class="mb-3">
+        <label for="guestFile" class="form-label">Upload Data Tamu (CSV/Excel)</label>
+        <input type="file" class="form-control" id="guestFile" accept=".csv, .xlsx">
+        <small class="text-muted">Jika di-upload, akan override form tamu manual.</small>
+      </div>
+      <!-- Tanggal Check‐In / Check‐Out -->
+      <div class="row mb-3">
+        <div class="col">
+          <label for="checkinDate" class="form-label">Check‐In</label>
+          <input type="date" class="form-control" id="checkinDate" required>
+        </div>
+        <div class="col">
+          <label for="checkoutDate" class="form-label">Check‐Out</label>
+          <input type="date" class="form-control" id="checkoutDate" required>
+        </div>
+      </div>
+      <!-- Agenda -->
+      <div class="mb-3">
+        <label for="agenda" class="form-label">Agenda</label>
+        <textarea class="form-control" id="agenda" rows="2" required></textarea>
+      </div>
+      <!-- Hidden untuk assigned_room -->
+      <input type="hidden" id="assignedRoom" value="">
+      <button type="submit" class="btn btn-success">Kirim Reservasi</button>
+      <div id="reservationAlert" class="mt-2"></div>
+    </form>
+  `;
 
-    showAlert(`Silakan isi detail untuk ${count} tamu di bawah ini.`, 'info');
+  // Event listener untuk jumlah tamu & file upload
+  document.getElementById("numGuests").addEventListener("change", (e) => {
+    const count = parseInt(e.target.value);
+    renderGuestFields(count);
   });
+  document.getElementById("guestFile").addEventListener("change", handleGuestFileUpload);
+  document.getElementById("reservationForm").addEventListener("submit", handleReservationSubmit);
 
-  // 2) Saat form disubmit → validasi dan kirim JSONP
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+  // Jika ada preferredRoom di sessionStorage, isi hidden field
+  const preferred = sessionStorage.getItem("preferredRoom");
+  if (preferred) {
+    document.getElementById("assignedRoom").value = preferred;
+    sessionStorage.removeItem("preferredRoom");
+  }
+}
 
-    // Ambil value dari field umum
-    const requester_name = document.getElementById('requesterName').value.trim();
-    const requesterUnit = document.getElementById('requesterUnit').value.trim();
-    const requesterPosition = document
-      .getElementById('requesterPosition')
-      .value.trim();
-    const numGuests = parseInt(numGuestsInput.value, 10) || 0;
-    const agenda = document.getElementById('agenda').value.trim();
-    const checkin_date = document.getElementById('checkinDate').value;
-    const checkin_time = document.getElementById('checkinTime').value;
-    const checkout_date = document.getElementById('checkoutDate').value;
-    const checkout_time = document.getElementById('checkoutTime').value;
+/**
+ * Render form dinamis untuk setiap tamu
+ */
+function renderGuestFields(count) {
+  const container = document.getElementById("guestsContainer");
+  container.innerHTML = "";
+  for (let i = 1; i <= count; i++) {
+    const html = `
+      <div class="card mb-2 p-2">
+        <h6>Tamu ${i}</h6>
+        <div class="row mb-2">
+          <div class="col">
+            <label class="form-label">Nama</label>
+            <input type="text" class="form-control guestName" data-index="${i}" required>
+          </div>
+          <div class="col">
+            <label class="form-label">Unit</label>
+            <input type="text" class="form-control guestUnit" data-index="${i}" required>
+          </div>
+          <div class="col">
+            <label class="form-label">Jabatan</label>
+            <input type="text" class="form-control guestPosition" data-index="${i}" required>
+          </div>
+          <div class="col">
+            <label class="form-label">Gender</label>
+            <select class="form-select guestGender" data-index="${i}" required>
+              <option value="" disabled selected>Pilih</option>
+              <option value="L">L</option>
+              <option value="P">P</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+    container.insertAdjacentHTML("beforeend", html);
+  }
+}
 
-    // Validasi "field umum"
-    if (!requester_name) {
-      showAlert('Nama Pemesan wajib diisi.', 'warning');
-      return;
-    }
-    if (!requesterUnit) {
-      showAlert('Unit Pemesan wajib diisi.', 'warning');
-      return;
-    }
-    if (!requesterPosition) {
-      showAlert('Jabatan Pemesan wajib diisi.', 'warning');
-      return;
-    }
-    if (numGuests < 1) {
-      showAlert('Jumlah Tamu wajib diisi minimal 1.', 'warning');
-      return;
-    }
-    if (!agenda) {
-      showAlert('Agenda wajib diisi.', 'warning');
-      return;
-    }
-    if (!checkin_date || !checkin_time) {
-      showAlert('Tanggal dan Jam Masuk wajib diisi.', 'warning');
-      return;
-    }
-    if (!checkout_date || !checkout_time) {
-      showAlert('Tanggal dan Jam Keluar wajib diisi.', 'warning');
-      return;
-    }
-    if (
-      new Date(checkout_date + ' ' + checkout_time) <
-      new Date(checkin_date + ' ' + checkin_time)
-    ) {
-      showAlert(
-        'Tanggal/Jam Keluar harus sama atau setelah Tanggal/Jam Masuk.',
-        'warning'
-      );
-      return;
-    }
-
-    // Validasi detail tamu
-    const blocks = guestsContainer.querySelectorAll('.guest-block');
-    if (blocks.length !== numGuests) {
-      showAlert(
-        'Klik tombol “Generate Fields” dan isi detail semua tamu sebelum submit.',
-        'warning'
-      );
-      return;
-    }
-
-    // Kumpulkan detail tamu ke array
+/**
+ * Handle upload file tamu (CSV/Excel) via SheetJS
+ */
+function handleGuestFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const data = evt.target.result;
+    const workbook = XLSX.read(data, { type: "binary" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const guests = [];
-    for (let i = 1; i <= numGuests; i++) {
-      const nameEl = document.getElementById(`guestName_${i}`);
-      const unitEl = document.getElementById(`guestUnit_${i}`);
-      const posEl = document.getElementById(`guestPosition_${i}`);
-      const genEl = document.getElementById(`guestGender_${i}`);
-
-      if (
-        !nameEl ||
-        !unitEl ||
-        !posEl ||
-        !genEl ||
-        !nameEl.value.trim() ||
-        !unitEl.value.trim() ||
-        !posEl.value.trim() ||
-        !genEl.value
-      ) {
-        showAlert(`Mohon isi semua field untuk Tamu #${i}.`, 'warning');
-        return;
+    for (let i = 1; i < json.length; i++) {
+      const row = json[i];
+      if (row.length >= 4) {
+        guests.push({
+          guest_name: row[0],
+          guest_unit: row[1],
+          guest_position: row[2],
+          guest_gender: row[3]
+        });
       }
-
-      guests.push({
-        name: nameEl.value.trim(),
-        unit: unitEl.value.trim(),
-        position: posEl.value.trim(),
-        gender: genEl.value
-      });
     }
+    populateGuestDataFromFile(guests);
+  };
+  reader.readAsBinaryString(file);
+}
 
-    // Jika semua valid → kirim JSONP
-    jsonpRequest(
-      'addReservation',
-      {
-        requester_name:     requester_name,
-        requester_unit:     requesterUnit,
-        requester_position: requesterPosition,
-        num_guests:         numGuests,
-        guest_details:      JSON.stringify(guests),
-        agenda:             agenda,
-        checkin_date:       checkin_date,
-        checkin_time:       checkin_time,
-        checkout_date:      checkout_date,
-        checkout_time:      checkout_time
-      },
-      'handleAddReservationResponse'
-    );
+/**
+ * Isi data tamu dari file ke form
+ */
+function populateGuestDataFromFile(arr) {
+  document.getElementById("numGuests").value = arr.length;
+  renderGuestFields(arr.length);
+  arr.forEach((g, idx) => {
+    const i = idx + 1;
+    document.querySelector(`.guestName[data-index="${i}"]`).value = g.guest_name;
+    document.querySelector(`.guestUnit[data-index="${i}"]`).value = g.guest_unit;
+    document.querySelector(`.guestPosition[data-index="${i}"]`).value = g.guest_position;
+    document.querySelector(`.guestGender[data-index="${i}"]`).value = g.guest_gender;
   });
+}
+
+/**
+ * Submit form reservasi → kirim ke GAS
+ */
+async function handleReservationSubmit(e) {
+  e.preventDefault();
+  const checkin  = document.getElementById("checkinDate").value;
+  const checkout = document.getElementById("checkoutDate").value;
+  if (new Date(checkin) >= new Date(checkout)) {
+    showReservationAlert("Check‐in harus lebih awal dari Check‐out", "danger");
+    return;
+  }
+  const requester_name     = document.getElementById("reqName").value.trim();
+  const requester_unit     = document.getElementById("reqUnit").value.trim();
+  const requester_position = document.getElementById("reqPosition").value.trim();
+  const num_guests         = parseInt(document.getElementById("numGuests").value);
+  const guest_details      = [];
+  for (let i = 1; i <= num_guests; i++) {
+    guest_details.push({
+      guest_name: document.querySelector(`.guestName[data-index="${i}"]`).value.trim(),
+      guest_unit: document.querySelector(`.guestUnit[data-index="${i}"]`).value.trim(),
+      guest_position: document.querySelector(`.guestPosition[data-index="${i}"]`).value.trim(),
+      guest_gender: document.querySelector(`.guestGender[data-index="${i}"]`).value
+    });
+  }
+  const agenda        = document.getElementById("agenda").value.trim();
+  const assigned_room = document.getElementById("assignedRoom").value;
+
+  // Persiapkan callback unik
+  const callbackName = "jsonpSubmitRes_" + Date.now();
+  const params = {
+    action: "submitReservation",
+    requester_name,
+    requester_unit,
+    requester_position,
+    num_guests: num_guests.toString(),
+    guest_details: JSON.stringify(guest_details),
+    agenda,
+    checkin_date: checkin,
+    checkout_date: checkout,
+    assigned_room
+  };
+
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) {
+        showReservationAlert(`Reservasi berhasil. ID: ${result.reservation_id}`, "success");
+        document.getElementById("reservationForm").reset();
+        document.getElementById("guestsContainer").innerHTML = "";
+      } else {
+        showReservationAlert(result.message || "Gagal mengirim reservasi", "danger");
+      }
+    },
+    (err) => {
+      console.error("Error submitReservation JSONP:", err);
+      showReservationAlert("Kesalahan jaringan / timeout.", "danger");
+    }
+  );
+}
+
+
+/**
+ * Tampilkan pesan (alert) form reservasi
+ */
+function showReservationAlert(msg, type) {
+  const el = document.getElementById("reservationAlert");
+  el.textContent = msg;
+  el.className = `mt-2 alert alert-${type}`;
+  setTimeout(() => {
+    el.textContent = "";
+    el.className = "";
+  }, 5000);
+}
+
+/**
+ * Load tabel Manajemen Reservasi (Admin)
+ */
+async function loadManagement() {
+  const container = document.getElementById("contentManagement");
+  container.innerHTML = `
+    <h4>Manajemen Reservasi</h4>
+    <div class="mb-3">
+      <select id="filterStatus" class="form-select w-25">
+        <option value="">Semua Status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="checked-in">Checked In</option>
+        <option value="checked-out">Checked Out</option>
+      </select>
+    </div>
+    <table class="table table-bordered" id="tblReservations">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Pemesan</th>
+          <th>Unit</th>
+          <th>Check-In</th>
+          <th>Check-Out</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  `;
+
+  document.getElementById("filterStatus").addEventListener("change", loadManagement);
+
+  const filter = document.getElementById("filterStatus").value;
+  const callbackName = "jsonpFetchRes_" + Date.now();
+  const params = {
+    action: "fetchReservations",
+    filterStatus: filter
+  };
+
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) {
+        renderReservationsTable(result.data);
+      }
+    },
+    (err) => {
+      console.error("Error fetchReservations JSONP:", err);
+    }
+  );
+}
+/**
+ * Render baris-baris tabel Reservasi di admin
+ */
+function renderReservationsTable(data) {
+  const tbody = document.querySelector("#tblReservations tbody");
+  tbody.innerHTML = "";
+  data.forEach((item) => {
+    const tr = document.createElement("tr");
+    let aksiBtns = '';
+    if (item.status === "pending") {
+      aksiBtns = `
+        <button class="btn btn-sm btn-success me-1" onclick="approveReservation('${item.reservation_id}')">Approve</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectReservation('${item.reservation_id}')">Reject</button>`;
+    } else if (item.status === "approved") {
+      aksiBtns = `<button class="btn btn-sm btn-primary me-1" onclick="checkIn('${item.reservation_id}')">Check In</button>`;
+    } else if (item.status === "checked-in") {
+      aksiBtns = `<button class="btn btn-sm btn-warning" onclick="checkOut('${item.reservation_id}')">Check Out</button>`;
+    } else {
+      aksiBtns = `-`;
+    }
+    tr.innerHTML = `
+      <td>${item.reservation_id}</td>
+      <td>${item.requester_name}</td>
+      <td>${item.requester_unit}</td>
+      <td>${item.checkin_date}</td>
+      <td>${item.checkout_date}</td>
+      <td>${item.status}</td>
+      <td>${aksiBtns}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * Aksi Approve Reservasi (Admin)
+ */
+function approveReservation(id) {
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  const callbackName = "jsonpApproveRes_" + Date.now();
+  const params = {
+    action: "approveReservation",
+    reservation_id: id,
+    admin_user: user.username
+  };
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) loadManagement();
+      else alert("Gagal approve: " + result.message);
+    },
+    (err) => { console.error(err); }
+  );
+}
+
+/**
+ * Aksi Reject Reservasi (Admin)
+ */
+function rejectReservation(id) {
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  const callbackName = "jsonpRejectRes_" + Date.now();
+  const params = {
+    action: "rejectReservation",
+    reservation_id: id,
+    admin_user: user.username
+  };
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) loadManagement();
+      else alert("Gagal reject: " + result.message);
+    },
+    (err) => { console.error(err); }
+  );
+}
+
+/**
+ * Aksi Check In (Admin)
+ */
+function checkIn(id) {
+  const assignedRoom = prompt("Masukkan Room ID untuk Check In:");
+  if (!assignedRoom) return;
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  const callbackName = "jsonpCheckIn_" + Date.now();
+  const params = {
+    action: "checkIn",
+    reservation_id: id,
+    assigned_room: assignedRoom,
+    admin_user: user.username
+  };
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) loadManagement();
+      else alert("Gagal check-in: " + result.message);
+    },
+    (err) => { console.error(err); }
+  );
+}
+
+/**
+ * Aksi Check Out (Admin)
+ */
+function checkOut(id) {
+  const user = JSON.parse(sessionStorage.getItem("user"));
+  const callbackName = "jsonpCheckOut_" + Date.now();
+  const params = {
+    action: "checkOut",
+    reservation_id: id,
+    admin_user: user.username
+  };
+  jsonpRequest(
+    SCRIPT_URL,
+    params,
+    callbackName,
+    (result) => {
+      if (result.success) loadManagement();
+      else alert("Gagal check-out: " + result.message);
+    },
+    (err) => { console.error(err); }
+  );
 }
