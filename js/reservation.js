@@ -28,7 +28,7 @@ function loadReservationForm() {
 
       <!-- Jumlah Tamu -->
       <div class="row mb-3">
-        <div class="col-4">
+        <div class="col-12 col-md-4">
           <label for="numGuests" class="form-label">Jumlah Tamu</label>
           <select id="numGuests" class="form-select" required>
             <option value="" disabled selected>Pilih jumlah</option>
