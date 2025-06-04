@@ -10,21 +10,19 @@ function loadReservationForm() {
     <form id="reservationForm">
       <!-- Data Pemesan -->
       <div class="row mb-3">
-        <div class="row mb-3">
-  <div class="col-12 col-md-4">
-    <label for="reqName" class="form-label">Nama Pemesan</label>
-    <input type="text" id="reqName" class="form-control" required>
-  </div>
-  <div class="col-12 col-md-4">
-    <label for="reqUnit" class="form-label">Unit Pemesan</label>
-    <input type="text" id="reqUnit" class="form-control" required>
-  </div>
-  <div class="col-12 col-md-4">
-    <label for="reqPosition" class="form-label">Jabatan Pemesan</label>
-    <input type="text" id="reqPosition" class="form-control" required>
-  </div>
-</div>
-
+        <div class="col-12 col-md-4">
+          <label for="reqName" class="form-label">Nama Pemesan</label>
+          <input type="text" id="reqName" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="reqUnit" class="form-label">Unit Pemesan</label>
+          <input type="text" id="reqUnit" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="reqPosition" class="form-label">Jabatan Pemesan</label>
+          <input type="text" id="reqPosition" class="form-control" required>
+        </div>
+      </div>
 
       <!-- Jumlah Tamu -->
       <div class="row mb-3">
@@ -84,9 +82,7 @@ function loadReservationForm() {
 
   // Ketika dropdown "Jumlah Tamu" berubah → render form tamu manual, kecuali ada file terpilih
   numGuestsSelect.addEventListener("change", (e) => {
-    if (guestFileInput.files.length) {
-      return;
-    }
+    if (guestFileInput.files.length) return;
     const count = parseInt(e.target.value);
     renderGuestFields(count);
   });
@@ -303,7 +299,8 @@ let resPageSize = 20; // default 20
 let resTotalPages = 0;
 
 /**
- * Load tabel Manajemen Reservasi (Admin) — versi baru dengan paging, search, dan page size
+ * Load tabel Manajemen Reservasi (Admin) — versi baru dengan paging, search, page size,
+ * dan daftar tamu yang bisa expand/collapse
  */
 async function loadManagement() {
   const container = document.getElementById("contentManagement");
@@ -334,6 +331,7 @@ async function loadManagement() {
     <table class="table table-bordered" id="tblReservations">
       <thead class="table-light">
         <tr>
+          <th></th>
           <th>ID</th>
           <th>Pemesan</th>
           <th>Unit</th>
@@ -417,13 +415,14 @@ function applyFilterSearchAndRender() {
 
 /**
  * Render baris‐baris tabel hanya untuk halaman resCurrentPage
+ * Setiap baris utama diikuti baris collapsible untuk daftar tamu, default hidden.
  */
 function renderReservationsTablePaginated() {
   const tbody = document.querySelector("#tblReservations tbody");
   tbody.innerHTML = "";
 
   if (!resFilteredReservations.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center">Tidak ada reservasi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center">Tidak ada reservasi</td></tr>`;
     return;
   }
 
@@ -432,29 +431,34 @@ function renderReservationsTablePaginated() {
   const pageData = resFilteredReservations.slice(start, end);
 
   pageData.forEach((item) => {
-    const tr = document.createElement("tr");
-    let aksiBtns = '';
-    if (item.status === "pending") {
-      aksiBtns = `
-        <button class="btn btn-sm btn-success me-1" onclick="approveReservation('${item.reservation_id}')">Approve</button>
-        <button class="btn btn-sm btn-danger" onclick="rejectReservation('${item.reservation_id}')">Reject</button>`;
-    } else if (item.status === "approved") {
-      aksiBtns = `<button class="btn btn-sm btn-primary me-1" onclick="checkIn('${item.reservation_id}')">Check In</button>`;
-    } else if (item.status === "checked-in") {
-      aksiBtns = `<button class="btn btn-sm btn-warning" onclick="checkOut('${item.reservation_id}')">Check Out</button>`;
-    } else {
-      aksiBtns = `-`;
-    }
-    tr.innerHTML = `
+    // Baris utama
+    const trMain = document.createElement("tr");
+    trMain.innerHTML = `
+      <td>
+        <button class="btn btn-sm btn-outline-secondary" onclick="toggleGuests('${item.reservation_id}')">
+          ➕
+        </button>
+      </td>
       <td>${item.reservation_id}</td>
       <td>${item.requester_name}</td>
       <td>${item.requester_unit}</td>
       <td>${item.checkin_date}</td>
       <td>${item.checkout_date}</td>
       <td>${item.status}</td>
-      <td>${aksiBtns}</td>
+      <td>${getAksiButtons(item)}</td>
     `;
-    tbody.appendChild(tr);
+    tbody.appendChild(trMain);
+
+    // Baris collapsible untuk daftar tamu (default disembunyikan)
+    const trGuests = document.createElement("tr");
+    trGuests.id = `guests-row-${item.reservation_id}`;
+    trGuests.style.display = "none";
+    trGuests.innerHTML = `
+      <td colspan="8" id="guests-container-${item.reservation_id}" data-loaded="false">
+        <!-- Konten akan di‐load secara Dinamis -->
+      </td>
+    `;
+    tbody.appendChild(trGuests);
   });
 }
 
@@ -522,6 +526,87 @@ function renderReservationsPaginationControls() {
   // Tombol “Next”
   const nextDisabled = resCurrentPage === resTotalPages;
   ul.appendChild(createPageItem(resCurrentPage + 1, "»", nextDisabled, false));
+}
+
+/**
+ * Menghasilkan HTML untuk tombol Aksi (Approve/Reject/Check In/Check Out)
+ */
+function getAksiButtons(item) {
+  const id = item.reservation_id;
+  if (item.status === "pending") {
+    return `
+      <button class="btn btn-sm btn-success me-1" onclick="approveReservation('${id}')">Approve</button>
+      <button class="btn btn-sm btn-danger" onclick="rejectReservation('${id}')">Reject</button>
+    `;
+  } else if (item.status === "approved") {
+    return `<button class="btn btn-sm btn-primary me-1" onclick="checkIn('${id}')">Check In</button>`;
+  } else if (item.status === "checked-in") {
+    return `<button class="btn btn-sm btn-warning" onclick="checkOut('${id}')">Check Out</button>`;
+  } else {
+    return `-`;
+  }
+}
+
+/**
+ * Toggle baris daftar tamu: jika hidden → tampilkan dan load data, 
+ * jika tampilkan → sembunyikan.
+ */
+function toggleGuests(reservationId) {
+  const trGuests = document.getElementById(`guests-row-${reservationId}`);
+  const btn = trGuests.previousElementSibling.querySelector("button");
+  if (trGuests.style.display === "none") {
+    trGuests.style.display = "";
+    btn.textContent = "➖";
+    // Jika belum ada konten, load dari server
+    const container = document.getElementById(`guests-container-${reservationId}`);
+    if (container.dataset.loaded === "false") {
+      container.textContent = "Loading tamu...";
+      const callbackName = "jsonpFetchGuests_" + Date.now();
+      jsonpRequest(
+        SCRIPT_URL,
+        { action: "fetchGuests", reservation_id: reservationId },
+        callbackName,
+        (result) => {
+          if (result.success) {
+            renderGuestList(reservationId, result.data);
+            container.dataset.loaded = "true";
+          } else {
+            container.textContent = "Gagal load daftar tamu";
+          }
+        },
+        (err) => {
+          console.error("Error fetchGuests JSONP:", err);
+          container.textContent = "Gagal load daftar tamu";
+        }
+      );
+    }
+  } else {
+    trGuests.style.display = "none";
+    btn.textContent = "➕";
+  }
+}
+
+/**
+ * Render daftar tamu (dipanggil oleh toggleGuests)
+ * Parameter `guests` adalah array objek {guest_name, guest_unit,
+ * guest_position, guest_gender}, diambil dari sheet "Guests".
+ */
+function renderGuestList(reservationId, guests) {
+  const container = document.getElementById(`guests-container-${reservationId}`);
+  if (!guests.length) {
+    container.innerHTML = `<em>Tidak ada tamu</em>`;
+    return;
+  }
+  let html = `<ul class="list-group">`;
+  guests.forEach((g) => {
+    html += `
+      <li class="list-group-item">
+        <strong>${g.guest_name}</strong> — ${g.guest_unit}, ${g.guest_position} (${g.guest_gender})
+      </li>
+    `;
+  });
+  html += `</ul>`;
+  container.innerHTML = html;
 }
 
 /**

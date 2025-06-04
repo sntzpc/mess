@@ -190,7 +190,7 @@ function loadProfile() {
 /**
  * Load Log Sistem (Admin)
  */
-// js/users.js (bagian Log Sistem)
+// js/users.js (Bagian Log Sistem yang sudah di‐sort)
 
 // Variabel global untuk menyimpan data log dan status paging
 let logsData = [];
@@ -200,7 +200,8 @@ let pageSize = 20; // default 20
 let totalPages = 0;
 
 /**
- * Load Log Sistem (Admin) — versi baru dengan paging, search, dan page size
+ * Load Log Sistem (Admin) — versi baru dengan paging, search, page size,
+ * dan pengurutan data terbaru (timestamp) di atas.
  */
 function loadLogs() {
   const container = document.getElementById("contentLogs");
@@ -257,11 +258,26 @@ function loadLogs() {
     callbackName,
     (result) => {
       if (result.success) {
+        // Simpan data awal
         logsData = result.data || [];
+
+        // Sort logsData berdasarkan timestamp (descending: terbaru di atas)
+        // Asumsi: log.timestamp disimpan dalam format yang dapat di-parse oleh `new Date()`
+        logsData.sort((a, b) => {
+          const dateA = new Date(a.timestamp);
+          const dateB = new Date(b.timestamp);
+          return dateB - dateA;
+        });
+
+        // Setelah di‐sort, langsung terapkan search & render
         applySearchAndRender();
+      } else {
+        console.error("fetchLogs gagal:", result.message);
       }
     },
-    (err) => { console.error("Error fetchLogs JSONP:", err); }
+    (err) => {
+      console.error("Error fetchLogs JSONP:", err);
+    }
   );
 }
 
@@ -281,6 +297,7 @@ function applySearchAndRender() {
       );
     });
   } else {
+    // Jika tidak ada pencarian, gunakan seluruh logsData yang sudah di‐sort
     filteredLogs = logsData.slice();
   }
   totalPages = Math.ceil(filteredLogs.length / pageSize) || 1;
@@ -385,11 +402,3 @@ function renderPaginationControls() {
   const nextDisabled = currentPage === totalPages;
   ul.appendChild(createPageItem(currentPage + 1, "»", nextDisabled, false));
 }
-
-/* 
-  Setelah ini, pastikan di main.js atau di tempat manapun Anda
-  memanggil:
-    showTab("Logs");
-    loadLogs();
-  ketika user mengklik tab “Log Sistem”.
-*/
