@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("navManagement").style.display = "";
     document.getElementById("navRoomsAdmin").style.display = "";
     document.getElementById("navUsers").style.display = "";
+    document.getElementById("navJournal").style.display = "";
     document.getElementById("navLogs").style.display = "";
   }
 
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tabManagement").addEventListener("click", () => showTab("Management"));
     document.getElementById("tabRoomsAdmin").addEventListener("click", () => showTab("RoomsAdmin"));
     document.getElementById("tabUsers").addEventListener("click", () => showTab("Users"));
+    document.getElementById("tabJournal").addEventListener("click", () => showTab("Journal"));
     document.getElementById("tabLogs").addEventListener("click", () => showTab("Logs"));
   }
   document.getElementById("tabProfile").addEventListener("click", () => showTab("Profile"));
@@ -40,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function showTab(tabName) {
-  const allTabs = ["Reservations", "Rooms", "Management", "RoomsAdmin", "Users", "Logs", "Profile"];
+  const allTabs = ["Reservations", "Rooms", "Management", "RoomsAdmin", "Users", "Journal", "Logs", "Profile"];
   allTabs.forEach((t) => {
     document.getElementById("content" + t).style.display = "none";
     const link = document.getElementById("tab" + t);
@@ -67,6 +69,9 @@ function showTab(tabName) {
       break;
     case "Users":
       loadUsers();
+      break;
+    case "Journal":
+      loadJournal();
       break;
     case "Logs":
       loadLogs();
