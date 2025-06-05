@@ -667,19 +667,31 @@ function checkIn(id) {
   if (!assignedRoom) return;
   const user = JSON.parse(sessionStorage.getItem("user"));
   const callbackName = "jsonpCheckIn_" + Date.now();
+  const nowIso = new Date().toISOString(); // Timestamp saat ini
+
   const params = {
     action:         "checkIn",
     reservation_id: id,
     assigned_room:  assignedRoom,
     admin_user:     user.username
   };
+
   jsonpRequest(
     SCRIPT_URL,
     params,
     callbackName,
     async (result) => {
       if (result.success) {
-        // Setelah sukses check-in, fetch daftar tamu
+        // 1. Update checkin_date di sheet Reservations
+        const checkinParams = {
+          action: 'updateReservationCheckinDate',
+          reservation_id: id,
+          checkin_date: nowIso,
+          callback: "callbackFn"
+        };
+        fetch(`${SCRIPT_URL}?${(new URLSearchParams(checkinParams)).toString()}`);
+
+        // 2. Proses createJournalEntry (seperti skrip kamu sebelumnya)
         const guestsCallback = "jsonpGuests_" + Date.now();
         jsonpRequest(
           SCRIPT_URL,
@@ -687,9 +699,7 @@ function checkIn(id) {
           guestsCallback,
           (resGuests) => {
             if (resGuests.success && resGuests.data && resGuests.data.length) {
-              const nowIso = new Date().toISOString();
               resGuests.data.forEach(guest => {
-                // Panggil createJournalEntry untuk setiap tamu
                 const journalParams = {
                   action: 'createJournalEntry',
                   reservation_id: id,
@@ -701,16 +711,10 @@ function checkIn(id) {
                   admin_user: user.username,
                   callback: "callbackFn"
                 };
-                // Kirim request ke GAS
-                fetch(`${SCRIPT_URL}?${(new URLSearchParams(journalParams)).toString()}`)
-                  .then(r => r.text())
-                  .then(txt => {
-                    // Opsional: handle respon per-tamu
-                    // const result = JSON.parse(txt.replace(/^callbackFn\((.*)\);?$/, '$1'));
-                  });
+                fetch(`${SCRIPT_URL}?${(new URLSearchParams(journalParams)).toString()}`);
               });
             }
-            loadManagement(); // Refresh tampilan
+            loadManagement();
           },
           (err) => {
             alert("Check-in berhasil, tapi gagal mengambil data tamu.");
@@ -728,12 +732,23 @@ function checkIn(id) {
 }
 
 
+
 /**
  * Aksi Check Out (Admin)
  */
 function checkOut(id) {
   const user = JSON.parse(sessionStorage.getItem("user"));
-  // Modifikasi agar panggil checkOutReservation (update ke Journal GAS)
+  const nowIso = new Date().toISOString();
+  // 1. Update checkout_date di sheet Reservations
+  const checkoutParams = {
+    action: 'updateReservationCheckoutDate',
+    reservation_id: id,
+    checkout_date: nowIso,
+    callback: "callbackFn"
+  };
+  fetch(`${SCRIPT_URL}?${(new URLSearchParams(checkoutParams)).toString()}`);
+
+  // 2. Lanjutkan dengan proses checkOutReservation (update Journal)
   checkOutReservation(id, user.username).then(result => {
     if (result.success) {
       loadManagement();
@@ -745,6 +760,7 @@ function checkOut(id) {
     alert("Gagal check-out (jaringan): " + err);
   });
 }
+
 
 // Contoh: Fungsi panggil GAS untuk update checkout Journal
 async function checkOutReservation(reservation_id, admin_user) {
