@@ -489,7 +489,6 @@ function loadJournal() {
           <th>Tgl Keluar</th>
           <th>Jam Keluar</th>
           <th>Timestamp</th>
-          <th>Aksi</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -638,7 +637,7 @@ function renderJournalTablePaginated() {
   tbody.innerHTML = "";
 
   if (!filteredJournal.length) {
-    tbody.innerHTML = `<tr><td colspan="12" class="text-center">Tidak ada data jurnal</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center">Tidak ada data jurnal</td></tr>`;
     return;
   }
 
@@ -656,7 +655,8 @@ function renderJournalTablePaginated() {
     const tglMasuk = isNaN(dtCI) ? "" : dtCI.toLocaleDateString("id-ID");
     const jamMasuk = isNaN(dtCI) ? "" : dtCI.toLocaleTimeString("id-ID", {
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hour12: false
     });
 
     // Format checkout
@@ -667,7 +667,8 @@ function renderJournalTablePaginated() {
       tglKeluar = dtCO.toLocaleDateString("id-ID");
       jamKeluar = dtCO.toLocaleTimeString("id-ID", {
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        hour12: false
       });
     }
 
@@ -680,14 +681,10 @@ function renderJournalTablePaginated() {
         month: "short",
         year: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        hour12: false
       });
     }
-
-    // Jika belum checkout, tampilkan tombol “Check Out”
-    const aksiBtn = entry.checkout_timestamp ?
-      `—` :
-      `<button class="btn btn-sm btn-warning btnCheckOut" data-id="${entry.journal_id}">Check Out</button>`;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -702,16 +699,13 @@ function renderJournalTablePaginated() {
       <td>${tglKeluar}</td>
       <td>${jamKeluar}</td>
       <td>${timestmp}</td>
-      <td>${aksiBtn}</td>
     `;
     tbody.appendChild(tr);
   });
 
-  // Pasang listener “Check Out” pada tiap tombol yang ada
-  document.querySelectorAll(".btnCheckOut").forEach(btn => {
-    btn.addEventListener("click", handleCheckOut);
-  });
+  // Tidak ada lagi listener atau tombol aksi di sini!
 }
+
 
 
 /**
@@ -855,7 +849,8 @@ function exportJournalToExcel() {
     const tglIn = isNaN(dCI) ? "" : dCI.toLocaleDateString("id-ID");
     const jIn = isNaN(dCI) ? "" : dCI.toLocaleTimeString("id-ID", {
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hour12: false
     });
 
     let tglOut = "",
@@ -865,7 +860,8 @@ function exportJournalToExcel() {
       tglOut = dCO.toLocaleDateString("id-ID");
       jamOut = dCO.toLocaleTimeString("id-ID", {
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        hour12: false
       });
     }
 
@@ -875,7 +871,8 @@ function exportJournalToExcel() {
       month: "short",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hour12: false
     });
 
     wsData.push([
@@ -973,7 +970,8 @@ function exportJournalToPDF() {
     const tglIn = isNaN(dCI) ? "" : dCI.toLocaleDateString("id-ID");
     const jIn = isNaN(dCI) ? "" : dCI.toLocaleTimeString("id-ID", {
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hour12: false
     });
 
     let tglOut = "",
@@ -983,7 +981,8 @@ function exportJournalToPDF() {
       tglOut = dCO.toLocaleDateString("id-ID");
       jamOut = dCO.toLocaleTimeString("id-ID", {
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
+        hour12: false
       });
     }
 
@@ -993,7 +992,8 @@ function exportJournalToPDF() {
       month: "short",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      hour12: false
     });
 
     tableBody.push([

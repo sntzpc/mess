@@ -677,9 +677,49 @@ function checkIn(id) {
     SCRIPT_URL,
     params,
     callbackName,
-    (result) => {
-      if (result.success) loadManagement();
-      else alert("Gagal check-in: " + result.message);
+    async (result) => {
+      if (result.success) {
+        // Setelah sukses check-in, fetch daftar tamu
+        const guestsCallback = "jsonpGuests_" + Date.now();
+        jsonpRequest(
+          SCRIPT_URL,
+          { action: "fetchGuests", reservation_id: id },
+          guestsCallback,
+          (resGuests) => {
+            if (resGuests.success && resGuests.data && resGuests.data.length) {
+              const nowIso = new Date().toISOString();
+              resGuests.data.forEach(guest => {
+                // Panggil createJournalEntry untuk setiap tamu
+                const journalParams = {
+                  action: 'createJournalEntry',
+                  reservation_id: id,
+                  guest_name: guest.guest_name,
+                  guest_unit: guest.guest_unit,
+                  guest_position: guest.guest_position,
+                  assigned_room: assignedRoom,
+                  checkin_timestamp: nowIso,
+                  admin_user: user.username,
+                  callback: "callbackFn"
+                };
+                // Kirim request ke GAS
+                fetch(`${SCRIPT_URL}?${(new URLSearchParams(journalParams)).toString()}`)
+                  .then(r => r.text())
+                  .then(txt => {
+                    // Opsional: handle respon per-tamu
+                    // const result = JSON.parse(txt.replace(/^callbackFn\((.*)\);?$/, '$1'));
+                  });
+              });
+            }
+            loadManagement(); // Refresh tampilan
+          },
+          (err) => {
+            alert("Check-in berhasil, tapi gagal mengambil data tamu.");
+            loadManagement();
+          }
+        );
+      } else {
+        alert("Gagal check-in: " + result.message);
+      }
     },
     (err) => {
       console.error(err);
@@ -687,27 +727,51 @@ function checkIn(id) {
   );
 }
 
+
 /**
  * Aksi Check Out (Admin)
  */
 function checkOut(id) {
   const user = JSON.parse(sessionStorage.getItem("user"));
-  const callbackName = "jsonpCheckOut_" + Date.now();
-  const params = {
-    action:         "checkOut",
-    reservation_id: id,
-    admin_user:     user.username
-  };
-  jsonpRequest(
-    SCRIPT_URL,
-    params,
-    callbackName,
-    (result) => {
-      if (result.success) loadManagement();
-      else alert("Gagal check-out: " + result.message);
-    },
-    (err) => {
-      console.error(err);
+  // Modifikasi agar panggil checkOutReservation (update ke Journal GAS)
+  checkOutReservation(id, user.username).then(result => {
+    if (result.success) {
+      loadManagement();
+    } else {
+      alert("Gagal check-out: " + result.message);
     }
-  );
+  }).catch(err => {
+    console.error(err);
+    alert("Gagal check-out (jaringan): " + err);
+  });
 }
+
+// Contoh: Fungsi panggil GAS untuk update checkout Journal
+async function checkOutReservation(reservation_id, admin_user) {
+  const nowIso = new Date().toISOString();
+  const params = new URLSearchParams({
+    action: 'updateJournalExit',
+    reservation_id: reservation_id,
+    checkout_timestamp: nowIso,
+    last_timestamp: nowIso,
+    admin_user: admin_user,
+    callback: 'callbackFn' // Jika menggunakan JSONP, sesuaikan dengan setup anda
+  });
+  // Panggil endpoint GAS (SCRIPT_URL harus sudah didefinisikan)
+  const url = `${SCRIPT_URL}?${params.toString()}`;
+  return fetch(url)
+    .then(r => r.text())
+    .then(txt => {
+      // Jika JSONP, perlu parsing, misal:
+      // callbackFn({...result...});
+      // Di bawah contoh parsing manual:
+      const result = JSON.parse(txt.replace(/^callbackFn\((.*)\);?$/, '$1'));
+      if (result.success) {
+        alert('Check-Out berhasil!');
+      } else {
+        alert('Check-Out gagal: ' + result.message);
+      }
+      return result;
+    });
+}
+
