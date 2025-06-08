@@ -739,26 +739,50 @@ function checkIn(id) {
 function checkOut(id) {
   const user = JSON.parse(sessionStorage.getItem("user"));
   const nowIso = new Date().toISOString();
-  // 1. Update checkout_date di sheet Reservations
-  const checkoutParams = {
-    action: 'updateReservationCheckoutDate',
-    reservation_id: id,
-    checkout_date: nowIso,
-    callback: "callbackFn"
-  };
-  fetch(`${SCRIPT_URL}?${(new URLSearchParams(checkoutParams)).toString()}`);
 
-  // 2. Lanjutkan dengan proses checkOutReservation (update Journal)
-  checkOutReservation(id, user.username).then(result => {
-    if (result.success) {
-      loadManagement();
-    } else {
-      alert("Gagal check-out: " + result.message);
+  // 1. CALL checkOut di GAS (update Reservations & Rooms)
+  const callbackName = "jsonpCheckOut_" + Date.now();
+  jsonpRequest(
+    SCRIPT_URL,
+    {
+      action: 'checkOut',
+      reservation_id: id,
+      admin_user: user.username,
+      callback: callbackName
+    },
+    callbackName,
+    (result) => {
+      if (result.success) {
+        // 2. Update kolom checkout_date di sheet Reservations (opsional, bisa ditiadakan jika sudah di-handle di GAS)
+        const checkoutParams = {
+          action: 'updateReservationCheckoutDate',
+          reservation_id: id,
+          checkout_date: nowIso,
+          callback: "callbackFn"
+        };
+        fetch(`${SCRIPT_URL}?${(new URLSearchParams(checkoutParams)).toString()}`);
+
+        // 3. Update Journal untuk semua tamu pada reservation_id ini
+        checkOutReservation(id, user.username).then(resultJournal => {
+          if (resultJournal.success) {
+            loadManagement();
+          } else {
+            alert("Check-out (Journal) gagal: " + (resultJournal.message || ''));
+            loadManagement();
+          }
+        }).catch(err => {
+          alert("Gagal update Journal: " + err);
+          loadManagement();
+        });
+      } else {
+        alert("Gagal check-out: " + result.message);
+        loadManagement();
+      }
+    },
+    (err) => {
+      alert("Gagal check-out (jaringan): " + err);
     }
-  }).catch(err => {
-    console.error(err);
-    alert("Gagal check-out (jaringan): " + err);
-  });
+  );
 }
 
 
