@@ -1,5 +1,84 @@
 // js/users.js
 
+// Fungsi untuk menambahkan styles dinamis untuk tabel Jurnal
+function addJournalTableStyles() {
+  if (document.getElementById('journal-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'journal-styles';
+  style.textContent = `
+    .journal-responsive-container {
+      max-width: 100%;
+      overflow: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    
+    #tblJournal {
+      width: 100%;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+    
+    #tblJournal th, #tblJournal td {
+      vertical-align: middle;
+      padding: 8px 12px;
+    }
+    
+    #tblJournal thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 10;
+    }
+    
+    #tblJournal tbody tr:hover {
+      background-color: rgba(0,0,0,0.02);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function addLogsTableStyles() {
+  if (document.getElementById('logs-styles')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'logs-styles';
+  style.textContent = `
+    .logs-responsive-container {
+      max-width: 100%;
+      overflow: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    
+    #tblLogs {
+      width: 100%;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+    
+    #tblLogs th, #tblLogs td {
+      vertical-align: middle;
+      padding: 8px 12px;
+    }
+    
+    #tblLogs thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 10;
+    }
+    
+    #tblLogs tbody tr:hover {
+      background-color: rgba(0,0,0,0.02);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 /**
  * Load Manajemen User (Admin)
  */
@@ -243,22 +322,27 @@ function loadLogs() {
         </select>
       </div>
     </div>
-    <table class="table table-striped" id="tblLogs">
-      <thead class="table-light">
-        <tr>
-          <th>Log ID</th>
-          <th>Reservasi ID</th>
-          <th>Aksi</th>
-          <th>Waktu</th>
-          <th>Admin</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="logs-responsive-container">
+      <table class="table table-striped" id="tblLogs">
+        <thead class="table-light">
+          <tr>
+            <th>Log ID</th>
+            <th>Reservasi ID</th>
+            <th>Aksi</th>
+            <th>Waktu</th>
+            <th>Admin</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <nav>
       <ul class="pagination" id="paginationLogs"></ul>
     </nav>
   `;
+
+  // Tambahkan styles untuk tabel log
+  addLogsTableStyles();
 
   // Event listener untuk pencarian (search)
   document.getElementById("searchLogs").addEventListener("input", () => {
@@ -286,7 +370,6 @@ function loadLogs() {
         logsData = result.data || [];
 
         // Sort logsData berdasarkan timestamp (descending: terbaru di atas)
-        // Asumsi: log.timestamp disimpan dalam format yang dapat di-parse oleh `new Date()`
         logsData.sort((a, b) => {
           const dateA = new Date(a.timestamp);
           const dateB = new Date(b.timestamp);
@@ -347,12 +430,15 @@ function renderLogsTablePaginated() {
 
   pageData.forEach((log) => {
     const tr = document.createElement("tr");
+    // Format timestamp menjadi lebih mudah dibaca
+    const timestamp = log.timestamp ? formatDateTimeIndo(new Date(log.timestamp)) : '-';
+    
     tr.innerHTML = `
-      <td>${log.log_id}</td>
-      <td>${log.reservation_id}</td>
-      <td>${log.action}</td>
-      <td>${log.timestamp}</td>
-      <td>${log.admin_user}</td>
+      <td>${log.log_id || '-'}</td>
+      <td>${log.reservation_id || '-'}</td>
+      <td>${log.action || '-'}</td>
+      <td>${timestamp}</td>
+      <td>${log.admin_user || '-'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -475,24 +561,26 @@ function loadJournal() {
     </div>
 
     <!-- (2) Tabel Jurnal Tamu -->
-    <table class="table table-striped" id="tblJournal">
-      <thead class="table-light">
-        <tr>
-          <th>No.</th>
-          <th>Nama</th>
-          <th>Unit</th>
-          <th>Jabatan</th>
-          <th>Agenda</th>
-          <th>No. Kamar</th>
-          <th>Tgl Masuk</th>
-          <th>Jam Masuk</th>
-          <th>Tgl Keluar</th>
-          <th>Jam Keluar</th>
-          <th>Timestamp</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="journal-responsive-container">
+      <table class="table table-striped" id="tblJournal">
+        <thead class="table-light">
+          <tr>
+            <th>No.</th>
+            <th>Nama</th>
+            <th>Unit</th>
+            <th>Jabatan</th>
+            <th>Agenda</th>
+            <th>No. Kamar</th>
+            <th>Tgl Masuk</th>
+            <th>Jam Masuk</th>
+            <th>Tgl Keluar</th>
+            <th>Jam Keluar</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
     <!-- (3) Pagination -->
     <nav>
@@ -526,6 +614,7 @@ function loadJournal() {
 
   // Fetch data Reservations → lalu Fetch data Jurnal
   fetchReservationsThenJournal();
+  addJournalTableStyles();
 }
 
 

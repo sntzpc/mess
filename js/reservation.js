@@ -1,5 +1,42 @@
 // js/reservation.js
 
+
+// Tambahkan style dinamis untuk tabel
+function addReservationTableStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .table-responsive-container {
+      max-width: 100%;
+      overflow: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    
+    #tblReservations {
+      width: 100%;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+    
+    #tblReservations th, #tblReservations td {
+      vertical-align: middle;
+      padding: 8px 12px;
+    }
+    
+    #tblReservations thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 10;
+    }
+    
+    #tblReservations tbody tr:hover {
+      background-color: rgba(0,0,0,0.02);
+    }
+  `;
+  document.head.appendChild(style);
+}
 /**
  * Tampilkan form reservasi di tab "Reservasi"
  */
@@ -108,6 +145,7 @@ function loadReservationForm() {
     document.getElementById("assignedRoom").value = preferred;
     sessionStorage.removeItem("preferredRoom");
   }
+  addReservationTableStyles();
 }
 
 /**
@@ -328,25 +366,28 @@ async function loadManagement() {
         </select>
       </div>
     </div>
-    <table class="table table-bordered" id="tblReservations">
-      <thead class="table-light">
-        <tr>
-          <th></th>
-          <th>ID</th>
-          <th>Pemesan</th>
-          <th>Unit</th>
-          <th>Check-In</th>
-          <th>Check-Out</th>
-          <th>Status</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-responsive-container"> <!-- Wrapper baru untuk scroll -->
+      <table class="table table-bordered" id="tblReservations">
+        <thead class="table-light">
+          <tr>
+            <th></th>
+            <th>ID</th>
+            <th>Pemesan</th>
+            <th>Unit</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <nav>
       <ul class="pagination" id="paginationRes"></ul>
     </nav>
   `;
+
 
   document.getElementById("searchRes").addEventListener("input", () => {
     resCurrentPage = 1;
@@ -386,6 +427,7 @@ async function loadManagement() {
       console.error("Error fetchReservations JSONP:", err);
     }
   );
+  addReservationTableStyles();
 }
 
 /**

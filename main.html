@@ -100,6 +100,34 @@
   <script src="js/rooms.js"></script>
   <script src="js/users.js"></script>
   <script src="js/telegram.js"></script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const navbar = document.querySelector('.navbar');
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    
+    // Close navbar when clicking outside or on a nav link (except dropdown toggle)
+    navbar.addEventListener('click', function(e) {
+      if (e.target.classList.contains('nav-link') && 
+          !e.target.classList.contains('dropdown-toggle')) {
+        if (navbarToggler && !navbarToggler.classList.contains('collapsed')) {
+          navbarToggler.click();
+        }
+      }
+    });
+    
+    // Close navbar after dropdown item is selected
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+      item.addEventListener('click', function() {
+        setTimeout(() => {
+          if (navbarToggler && !navbarToggler.classList.contains('collapsed')) {
+            navbarToggler.click();
+          }
+        }, 100);
+      });
+    });
+  });
+</script>
 </body>
 
 </html>
