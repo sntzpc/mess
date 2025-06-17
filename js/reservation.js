@@ -581,9 +581,9 @@ function getAksiButtons(item) {
       <button class="btn btn-sm btn-danger" onclick="rejectReservation('${id}')">Reject</button>
     `;
   } else if (item.status === "approved") {
-    return `<button class="btn btn-sm btn-primary me-1" onclick="checkIn('${id}')">Check In</button>`;
+    return `<button class="btn btn-sm btn-warning me-1" onclick="checkIn('${id}')">Check In</button>`;
   } else if (item.status === "checked-in") {
-    return `<button class="btn btn-sm btn-warning" onclick="checkOut('${id}')">Check Out</button>`;
+    return `<button class="btn btn-sm btn-secondary" onclick="checkOut('${id}')">Check Out</button>`;
   } else {
     return `-`;
   }
