@@ -109,7 +109,7 @@ function loadReservationForm() {
       <!-- Hidden untuk assigned_room -->
       <input type="hidden" id="assignedRoom" value="">
 
-      <button type="submit" class="btn btn-success">Kirim Reservasi</button>
+      <button type="submit" class="btn btn-success"id=" btnReservationSubmit">Kirim Reservasi</button>
       <div id="reservationAlert" class="mt-2"></div>
     </form>
   `;
@@ -236,83 +236,99 @@ function populateGuestDataFromFile(arr) {
  */
 async function handleReservationSubmit(e) {
   e.preventDefault();
-  const checkin  = document.getElementById("checkinDate").value;
-  const checkout = document.getElementById("checkoutDate").value;
-  if (new Date(checkin) >= new Date(checkout)) {
-    showReservationAlert("Check‐in harus lebih awal dari Check‐out", "danger");
-    return;
-  }
+  const btn = document.getElementById("btnReservationSubmit");
+  btn.disabled = true;
+  const prevHTML = btn.innerHTML;
+  btn.innerHTML = 'Mengirim... <span class="spinner-border spinner-border-sm"></span>';
 
-  const requester_name     = document.getElementById("reqName").value.trim();
-  const requester_unit     = document.getElementById("reqUnit").value.trim();
-  const requester_position = document.getElementById("reqPosition").value.trim();
-
-  const guestFile = document.getElementById("guestFile");
-  let guest_details = [];
-  let num_guests    = 0;
-
-  if (guestFile.files.length) {
-    num_guests = document.querySelectorAll(".guestName").length;
-    for (let i = 1; i <= num_guests; i++) {
-      guest_details.push({
-        guest_name:     document.querySelector(`.guestName[data-index="${i}"]`).value.trim(),
-        guest_unit:     document.querySelector(`.guestUnit[data-index="${i}"]`).value.trim(),
-        guest_position: document.querySelector(`.guestPosition[data-index="${i}"]`).value.trim(),
-        guest_gender:   document.querySelector(`.guestGender[data-index="${i}"]`).value
-      });
+  try {
+    const checkin  = document.getElementById("checkinDate").value;
+    const checkout = document.getElementById("checkoutDate").value;
+    if (new Date(checkin) >= new Date(checkout)) {
+      showReservationAlert("Check‐in harus lebih awal dari Check‐out", "danger");
+      return;
     }
-  } else {
-    num_guests = parseInt(document.getElementById("numGuests").value);
-    for (let i = 1; i <= num_guests; i++) {
-      guest_details.push({
-        guest_name:     document.querySelector(`.guestName[data-index="${i}"]`).value.trim(),
-        guest_unit:     document.querySelector(`.guestUnit[data-index="${i}"]`).value.trim(),
-        guest_position: document.querySelector(`.guestPosition[data-index="${i}"]`).value.trim(),
-        guest_gender:   document.querySelector(`.guestGender[data-index="${i}"]`).value
-      });
+
+    const requester_name     = document.getElementById("reqName").value.trim();
+    const requester_unit     = document.getElementById("reqUnit").value.trim();
+    const requester_position = document.getElementById("reqPosition").value.trim();
+
+    const guestFile = document.getElementById("guestFile");
+    let guest_details = [];
+    let num_guests    = 0;
+
+    if (guestFile.files.length) {
+      num_guests = document.querySelectorAll(".guestName").length;
+      for (let i = 1; i <= num_guests; i++) {
+        guest_details.push({
+          guest_name:     document.querySelector(`.guestName[data-index="${i}"]`).value.trim(),
+          guest_unit:     document.querySelector(`.guestUnit[data-index="${i}"]`).value.trim(),
+          guest_position: document.querySelector(`.guestPosition[data-index="${i}"]`).value.trim(),
+          guest_gender:   document.querySelector(`.guestGender[data-index="${i}"]`).value
+        });
+      }
+    } else {
+      num_guests = parseInt(document.getElementById("numGuests").value);
+      for (let i = 1; i <= num_guests; i++) {
+        guest_details.push({
+          guest_name:     document.querySelector(`.guestName[data-index="${i}"]`).value.trim(),
+          guest_unit:     document.querySelector(`.guestUnit[data-index="${i}"]`).value.trim(),
+          guest_position: document.querySelector(`.guestPosition[data-index="${i}"]`).value.trim(),
+          guest_gender:   document.querySelector(`.guestGender[data-index="${i}"]`).value
+        });
+      }
     }
-  }
 
-  const agenda        = document.getElementById("agenda").value.trim();
-  const assigned_room = document.getElementById("assignedRoom").value;
+    const agenda        = document.getElementById("agenda").value.trim();
+    const assigned_room = document.getElementById("assignedRoom").value;
 
-  const callbackName = "jsonpSubmitRes_" + Date.now();
-  const params = {
-    action:            "submitReservation",
-    requester_name:    requester_name,
-    requester_unit:    requester_unit,
-    requester_position: requester_position,
-    num_guests:        num_guests.toString(),
-    guest_details:     JSON.stringify(guest_details),
-    agenda:            agenda,
-    checkin_date:      checkin,
-    checkout_date:     checkout,
-    assigned_room:     assigned_room
-  };
+    const callbackName = "jsonpSubmitRes_" + Date.now();
+    const params = {
+      action:            "submitReservation",
+      requester_name:    requester_name,
+      requester_unit:    requester_unit,
+      requester_position: requester_position,
+      num_guests:        num_guests.toString(),
+      guest_details:     JSON.stringify(guest_details),
+      agenda:            agenda,
+      checkin_date:      checkin,
+      checkout_date:     checkout,
+      assigned_room:     assigned_room
+    };
 
-  jsonpRequest(
-    SCRIPT_URL,
-    params,
-    callbackName,
-    (result) => {
-      if (result.success) {
-        showReservationAlert(`Reservasi berhasil. ID: ${result.reservation_id}`, "success");
-        document.getElementById("reservationForm").reset();
-        document.getElementById("guestsContainer").innerHTML = "";
+    jsonpRequest(
+      SCRIPT_URL,
+      params,
+      callbackName,
+      (result) => {
+        if (result.success) {
+          showReservationAlert(`Reservasi berhasil. ID: ${result.reservation_id}`, "success");
+          document.getElementById("reservationForm").reset();
+          document.getElementById("guestsContainer").innerHTML = "";
+          document.getElementById("numGuests").disabled = false;
+          document.getElementById("numGuests").setAttribute("required", "");
+        } else {
+          showReservationAlert(result.message || "Gagal mengirim reservasi", "danger");
+        }
+        btn.disabled = false;
+        btn.innerHTML = prevHTML;
+      },
+      (err) => {
+        console.error("Error submitReservation JSONP:", err);
+        showReservationAlert("Kesalahan jaringan / timeout.", "danger");
         document.getElementById("numGuests").disabled = false;
         document.getElementById("numGuests").setAttribute("required", "");
-      } else {
-        showReservationAlert(result.message || "Gagal mengirim reservasi", "danger");
+        btn.disabled = false;
+        btn.innerHTML = prevHTML;
       }
-    },
-    (err) => {
-      console.error("Error submitReservation JSONP:", err);
-      showReservationAlert("Kesalahan jaringan / timeout.", "danger");
-      document.getElementById("numGuests").disabled = false;
-      document.getElementById("numGuests").setAttribute("required", "");
-    }
-  );
+    );
+  } catch (err) {
+    showReservationAlert("Error: " + (err.message || err), "danger");
+    btn.disabled = false;
+    btn.innerHTML = prevHTML;
+  }
 }
+
 
 /**
  * Tampilkan pesan (alert) form reservasi
