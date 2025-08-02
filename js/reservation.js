@@ -109,7 +109,7 @@ function loadReservationForm() {
       <!-- Hidden untuk assigned_room -->
       <input type="hidden" id="assignedRoom" value="">
 
-      <button type="submit" class="btn btn-success"id=" btnReservationSubmit">Kirim Reservasi</button>
+      <button type="submit" class="btn btn-success"id="btnReservationSubmit">Kirim Reservasi</button>
       <div id="reservationAlert" class="mt-2"></div>
     </form>
   `;
