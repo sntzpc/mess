@@ -1,0 +1,58 @@
+body { background:#f7f7f7; }
+.notif {
+  position: fixed;  top: 16px;  left: 50%;  transform: translateX(-50%);  padding: 12px 20px;
+  border-radius: 12px;  font-size: 14px;  font-weight: 500;  color: #155724;
+  background: rgba(212, 237, 218, 0.95); /* hijau pastel */
+  border: 1px solid rgba(195, 230, 203, 1);  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  z-index: 2000;  display: none;  backdrop-filter: blur(4px);  animation: fadeInOut 3s ease forwards;
+}
+
+.notif.err {
+  color: #721c24;
+  background: rgba(248, 215, 218, 0.95); /* merah pastel */
+  border-color: rgba(245, 198, 203, 1);
+}
+
+/* Animasi lembut */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -10px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  90% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.splinter {
+  position: fixed; inset:0; background:rgba(255,255,255,.6); display:none; z-index:1500;
+  align-items:center; justify-content:center; backdrop-filter: blur(2px);
+}
+.splinter .spinner-border { width:3rem;height:3rem; }
+.page { display:none; }
+table { white-space:nowrap; }
+.scroll-x { overflow-x:auto; }
+.card-room { border-left:4px solid #0d6efd; }
+.bi-plus-square { cursor:pointer; }
+.accordion-button::after{ margin-left:auto; }
+
+/* Kamar terisi - background kuning lembut */
+.card-room.occupied-terisi .card-body {
+  background-color: rgba(255, 193, 7, 0.2); /* kuning Bootstrap warning */
+}
+
+/* Kamar penuh - background merah lembut */
+.card-room.occupied-penuh .card-body {
+  background-color: rgba(220, 53, 69, 0.2); /* merah Bootstrap danger */
+}
+
+/* Dashboard Statistik */
+.stat-card.bg-available { background-color: #ffffff; }
+.stat-card.bg-occupied  { background-color: #fff3cd; } /* kuning lembut */
+.stat-card.bg-full      { background-color: #f8d7da; } /* merah lembut */
+.stat-card .card-title  { font-weight: 600; }
+
+/* KPI */
+.kpi-card .kpi-label { font-size: .9rem; color: #6c757d; }
+.kpi-card .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+.kpi-card .kpi-unit  { font-size: 1rem; font-weight: 500; margin-left: .25rem; color:#6c757d; }
+.kpi-card .kpi-note  { font-size: .8rem; }
+
+

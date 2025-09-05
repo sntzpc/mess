@@ -1,11 +1,258 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0; URL=login.html" />
-  <title>Redirecting to Login...</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pengelolaan Mess Seriang</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="./css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
+
 <body>
-  Jika tidak redirect otomatis, <a href="login.html">klik di sini</a>.
+
+  <!-- Notif + Splinter -->
+  <div id="notif" class="notif"></div>
+  <div id="spl" class="splinter">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg bg-dark navbar-dark sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Mess SNTZ</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="menu">
+          <li class="nav-item"><a class="nav-link" data-page="page-reservasi" href="#">Reservasi</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-kamar" href="#">Kamar</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-approval" href="#">Persetujuan</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-mess" href="#">Mess</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-jurnal" href="#">Jurnal</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-stat" href="#">Statistik</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Pengaturan</a>
+            <ul class="dropdown-menu" data-bs-auto-close="outside">
+              <li><a class="dropdown-item subpage" data-page="page-identitas" href="#">Identitas</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-kelola-mess" href="#">Kelola Mess</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-kelola-kamar" href="#">Kelola Kamar</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-kelola-user" href="#">Kelola User</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-config" href="#">Config</a></li>
+            </ul>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center gap-2">
+          <span id="whoami" class="navbar-text text-light small"></span>
+          <button id="btn-logout" class="btn btn-outline-light btn-sm">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-3">
+
+    <!-- LOGIN -->
+    <div id="page-login" class="page" style="display:block">
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">Login</h5>
+              <div class="mb-2">
+                <label class="form-label">Username</label>
+                <input id="login-username" class="form-control" autocomplete="username" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input id="login-password" type="password" class="form-control" autocomplete="current-password" />
+              </div>
+              <button id="btn-login" class="btn btn-primary w-100">Masuk</button>
+              <hr />
+              <small class="text-muted">Default: admin / admin (ubah segera di Kelola User)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESERVASI -->
+    <div id="page-reservasi" class="page">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5>Reservasi</h5>
+          <div class="row g-2">
+            <div class="col-md-4"><label class="form-label">Nama Pemesan</label><input id="rsv-name"
+                class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Unit</label><input id="rsv-unit" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Jabatan</label><input id="rsv-title" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Mess</label><select id="rsv-mess" class="form-select"></select></div>
+            <div class="col-md-4"><label class="form-label">Check-in</label><input id="rsv-in" type="date" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Check-out</label><input id="rsv-out" type="date" class="form-control" /></div>
+            <div class="col-12"><label class="form-label">Agenda</label><input id="rsv-agenda" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Jumlah Tamu</label>
+              <select id="rsv-qty" class="form-select">
+                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+              </select>
+            </div>
+            <div class="col-md-8 d-flex align-items-end justify-content-end gap-2">
+              <button id="btn-download-template" class="btn btn-outline-secondary"><i
+                  class="bi bi-file-earmark-excel"></i> Template XLSX</button>
+              <label class="btn btn-outline-success mb-0">
+                <i class="bi bi-upload"></i> Upload Data Tamu (xlsx)
+                <input id="upload-xlsx" type="file" accept=".xlsx" hidden />
+              </label>
+            </div>
+          </div>
+          <hr />
+          <div id="guest-list"></div>
+          <div class="mt-3 text-end">
+            <button id="btn-rsv-submit" class="btn btn-primary">Kirim Reservasi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KAMAR -->
+    <div id="page-kamar" class="page">
+      <div class="mb-2 d-flex gap-2">
+        <select id="kamar-mess" class="form-select" style="max-width:280px"></select>
+        <button id="btn-kamar-tampil" class="btn btn-primary">Tampilkan</button>
+      </div>
+      <div id="kamar-cards" class="row g-3"></div>
+    </div>
+
+    <!-- PERSETUJUAN -->
+    <div id="page-approval" class="page">
+      <div id="approval-list" class="scroll-x"></div>
+    </div>
+
+    <!-- MESS -->
+    <div id="page-mess" class="page">
+      <div class="d-flex gap-2 align-items-center">
+        <!-- <span class="badge text-bg-secondary"></span> -->
+        <select id="mess-choose" class="form-select" style="max-width:280px; display:none"></select>
+        <button id="btn-mess-refresh" class="btn btn-outline-primary btn-sm">Refresh</button>
+      </div>
+      <div id="mess-queue" class="scroll-x mt-2"></div>
+    </div>
+
+    <!-- JURNAL -->
+    <div id="page-jurnal" class="page">
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-3"><label class="form-label">Periode dari</label><input id="jr-from" type="date"
+            class="form-control"></div>
+        <div class="col-sm-3"><label class="form-label">sampai</label><input id="jr-to" type="date"
+            class="form-control"></div>
+        <div class="col-sm-6 text-end">
+          <button id="btn-jr-show" class="btn btn-primary">Tampilkan</button>
+          <button id="btn-jr-xlsx" class="btn btn-success">Export Excel</button>
+          <button id="btn-jr-pdf" class="btn btn-danger">Export PDF</button>
+        </div>
+      </div>
+      <div id="jr-table" class="scroll-x mt-3"></div>
+    </div>
+
+    <!-- STATISTIK -->
+    <div id="page-stat" class="page">
+      <div id="stat-box" class="row g-3"></div>
+    </div>
+
+    <!-- PENGATURAN -->
+    <div id="page-identitas" class="page">
+      <div class="card">
+        <div class="card-body">
+          <h6>Identitas Pemesan (LocalStorage)</h6>
+          <div class="row g-2">
+            <div class="col-md-4"><label class="form-label">Nama</label><input id="id-name" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Unit</label><input id="id-unit" class="form-control" /></div>
+            <div class="col-md-4"><label class="form-label">Jabatan</label><input id="id-title" class="form-control" /></div>
+          </div>
+          <div class="mt-3 text-end"><button id="btn-id-save" class="btn btn-primary">Simpan</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-kelola-mess" class="page">
+      <div class="d-flex gap-2 mb-2">
+        <input id="km-name" placeholder="Nama Mess" class="form-control" style="max-width:240px" />
+        <input id="km-loc" placeholder="Lokasi" class="form-control" style="max-width:240px" />
+        <input id="km-notes" placeholder="Catatan" class="form-control" />
+        <button id="km-add" class="btn btn-primary">Tambah</button>
+      </div>
+      <div id="km-list" class="scroll-x"></div>
+    </div>
+
+    <div id="page-kelola-kamar" class="page">
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-3"><label class="form-label">Mess</label><select id="kk-mess" class="form-select"></select></div>
+        <div class="col-sm-3"><label class="form-label">Nama Kamar</label><input id="kk-room" class="form-control" /></div>
+        <div class="col-sm-2"><label class="form-label">Kapasitas</label><input id="kk-cap" type="number" min="0" class="form-control" /></div>
+        <div class="col-sm-2"><label class="form-label">Golongan</label><input id="kk-grade" class="form-control" /></div>
+        <div class="col-sm-2 text-end"><button id="kk-add" class="btn btn-primary">Simpan</button></div>
+      </div>
+      <div id="kk-list" class="scroll-x mt-3"></div>
+    </div>
+
+    <div id="page-kelola-user" class="page">
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-3"><label class="form-label">Username</label><input id="ku-user" class="form-control" /></div>
+        <div class="col-sm-3"><label class="form-label">Password</label><input id="ku-pass" type="password" class="form-control" /></div>
+        <div class="col-sm-2"><label class="form-label">Role</label>
+          <select id="ku-role" class="form-select">
+            <option value="admin">admin</option>
+            <option value="user">user</option>
+            <option value="mess">mess</option>
+          </select>
+        </div>
+        <div class="col-sm-2"><label class="form-label">Mess</label><input id="ku-mess" class="form-control" placeholder="(untuk role mess)" /></div>
+        <div class="col-sm-2"><label class="form-label">Telegram ID</label><input id="ku-tele" class="form-control" /></div>
+        <div class="col-sm-12 text-end"><button id="ku-add" class="btn btn-primary">Tambah/Update</button></div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <input id="ku-newpass-user" class="form-control" placeholder="Ubah password untuk username...">
+        <input id="ku-newpass-val" type="password" class="form-control" placeholder="Password baru">
+        <button id="ku-newpass-btn" class="btn btn-warning">Ubah Password</button>
+      </div>
+      <div id="ku-list" class="scroll-x mt-3"></div>
+    </div>
+
+    <div id="page-config" class="page">
+  <div class="row g-2">
+    <!-- (Opsional) kolom GAS bisa disembunyikan bila tak dipakai -->
+    <!-- <div class="col-md-6"><label class="form-label">GAS Web App URL</label><input id="cfg-gas" class="form-control" placeholder="https://script.google.com/macros/s/.../exec"/></div> -->
+    <div class="col-md-6"><label class="form-label">Telegram Bot Token</label><input id="cfg-bot" class="form-control"/></div>
+    <div class="col-md-3"><label class="form-label">Telegram Admin ID</label><input id="cfg-admin" class="form-control"/></div>
+
+    <div class="col-12 d-flex justify-content-end gap-2 mt-2">
+      <button id="cfg-test-tg" class="btn btn-outline-secondary">
+        <i class="bi bi-send"></i> Test Telegram
+      </button>
+      <button id="cfg-save" class="btn btn-primary">Simpan Config</button>
+    </div>
+
+    <!-- CCTV mini panel (ringkas) -->
+    <div class="col-12">
+      <details id="cfg-tg-cctv" class="mt-2">
+        <summary><strong>🛠 CCTV Telegram (klik untuk lihat)</strong></summary>
+        <pre id="cfg-tg-log" class="bg-light border rounded p-2 mt-2" style="max-height:260px;overflow:auto"></pre>
+      </details>
+    </div>
+  </div>
+</div>
+
+
+
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
