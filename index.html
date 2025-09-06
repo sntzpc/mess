@@ -73,8 +73,7 @@
                 <input id="login-password" type="password" class="form-control" autocomplete="current-password" />
               </div>
               <button id="btn-login" class="btn btn-primary w-100">Masuk</button>
-              <hr />
-              <small class="text-muted">Default: admin / admin (ubah segera di Kelola User)</small>
+              <div class="text-center mt-3"><a href="#" id="lnk-register">Belum punya akun? Daftar</a></div>
             </div>
           </div>
         </div>
@@ -87,29 +86,33 @@
         <div class="card-body">
           <h5>Reservasi</h5>
           <div class="row g-2">
-            <div class="col-md-4"><label class="form-label">Nama Pemesan</label><input id="rsv-name"
-                class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Unit</label><input id="rsv-unit" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Jabatan</label><input id="rsv-title" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Mess</label><select id="rsv-mess" class="form-select"></select></div>
-            <div class="col-md-4"><label class="form-label">Check-in</label><input id="rsv-in" type="date" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Check-out</label><input id="rsv-out" type="date" class="form-control" /></div>
-            <div class="col-12"><label class="form-label">Agenda</label><input id="rsv-agenda" class="form-control" /></div>
-            <div class="col-md-4"><label class="form-label">Jumlah Tamu</label>
-              <select id="rsv-qty" class="form-select">
-                <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-                <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
-              </select>
-            </div>
-            <div class="col-md-8 d-flex align-items-end justify-content-end gap-2">
-              <button id="btn-download-template" class="btn btn-outline-secondary"><i
-                  class="bi bi-file-earmark-excel"></i> Template XLSX</button>
-              <label class="btn btn-outline-success mb-0">
-                <i class="bi bi-upload"></i> Upload Data Tamu (xlsx)
-                <input id="upload-xlsx" type="file" accept=".xlsx" hidden />
-              </label>
-            </div>
-          </div>
+              <div class="col-md-4"><label class="form-label mb-0">Nama Pemesan</label><input id="rsv-name" class="form-control" />
+    <button id="btn-toggle-identity" type="button" class="btn btn-link btn-sm p-0">Tampilkan Unit &amp; Jabatan</button>
+  </div>
+
+  <!-- Disembunyikan saat awal, bisa ditoggle -->
+          <div id="grp-rsv-unit" class="col-md-4 d-none"><label class="form-label">Unit</label><input id="rsv-unit" class="form-control" /></div>
+          <div id="grp-rsv-title" class="col-md-4 d-none"><label class="form-label">Jabatan</label><input id="rsv-title" class="form-control" /></div>
+
+        <div class="col-md-4"><label class="form-label">Mess</label><select id="rsv-mess" class="form-select"></select></div>
+        <div class="col-md-4"><label class="form-label">Check-in</label><input id="rsv-in" type="date" class="form-control" /></div>
+        <div class="col-md-4"><label class="form-label">Check-out</label><input id="rsv-out" type="date" class="form-control" /></div>
+        <div class="col-12"><label class="form-label">Agenda</label><input id="rsv-agenda" class="form-control" /></div>
+        <div class="col-md-4"><label class="form-label">Jumlah Tamu</label>
+          <select id="rsv-qty" class="form-select">
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          </select>
+  </div>
+  <div class="col-md-8 d-flex align-items-end justify-content-end gap-2">
+    <button id="btn-download-template" class="btn btn-outline-secondary"><i
+        class="bi bi-file-earmark-excel"></i> Template XLSX</button>
+    <label class="btn btn-outline-success mb-0">
+      <i class="bi bi-upload"></i> Upload Data Tamu (xlsx)
+      <input id="upload-xlsx" type="file" accept=".xlsx" hidden />
+    </label>
+  </div>
+</div>
           <hr />
           <div id="guest-list"></div>
           <div class="mt-3 text-end">
@@ -247,8 +250,40 @@
   </div>
 </div>
 
+<!-- REGISTER -->
+<section id="page-register" class="page" style="display:none">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Pendaftaran Akun</h5>
+          <form id="frm-register" autocomplete="off">
+            <div class="mb-3">
+              <label class="form-label">Nama Lengkap</label>
+              <input id="reg-fullname" class="form-control" placeholder="mis. Budi Santoso" required>
+              <div class="form-text">Username akan direkomendasikan dari nama depan (huruf kecil).</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input id="reg-username" class="form-control" placeholder="mis. budi" required>
+              <div class="form-text">Huruf kecil, tanpa spasi. Contoh: <code>budi</code>, <code>budi.s</code>, <code>budi_s</code>.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input id="reg-password" type="password" class="form-control" value="user123" required>
+              <div class="form-text">Hindari password sensitif. Disarankan gunakan <b>user123</b> saja.</div>
+            </div>
 
-
+            <div class="d-flex justify-content-between">
+              <button type="button" id="btn-reg-back" class="btn btn-light">Kembali</button>
+              <button type="submit" id="btn-reg-submit" class="btn btn-primary">Daftar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
   </div>
 
   <script type="module" src="./js/app.js"></script>

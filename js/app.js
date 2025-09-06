@@ -17,15 +17,18 @@ function onShow(pid){
   if(pid==='page-mess') loadMessQueue();
   if(pid==='page-stat'){
     import('./pages/stat.js').then(mod=>{
-      // jika mau selalu realtime saat masuk, kosongkan cache
       mod.invalidateStatKPI?.();
       mod.showStat();
     });
+  }
+  if(pid==='page-register'){
+    import('./pages/register.js').then(mod=>mod.showRegister());
   }
   if(pid.startsWith('page-kelola') || pid === 'page-config') {
     settingsOnPageShown(pid);
   }
 }
+
 function onReady(){
   // saat login sukses / restore sesi
   initCommonData().then(()=>fillMessSelects());

@@ -25,6 +25,17 @@ export function wireAuth(updateRoleUI, onReady){
 
   document.getElementById('btn-logout').addEventListener('click', logout);
 
+    // Link ke halaman daftar
+  const lnkReg = document.getElementById('lnk-register');
+  if (lnkReg) {
+    lnkReg.addEventListener('click', (e)=>{
+      e.preventDefault();
+      go('page-register');
+      // muat modul register saat dibuka
+      import('./pages/register.js').then(m => m.showRegister());
+    });
+  }
+
   // auto restore session
   (async ()=>{
     if(state.token && state.user){
@@ -45,8 +56,8 @@ export function applyRoleUI(){
 
   const show = new Set();
   if(role==='admin'){ ['page-reservasi','page-kamar','page-approval','page-mess','page-jurnal','page-identitas','page-kelola-mess','page-kelola-kamar','page-kelola-user','page-config','page-stat'].forEach(x=>show.add(x)); }
-  else if(role==='user'){ ['page-reservasi','page-kamar','page-identitas','page-config'].forEach(x=>show.add(x)); }
-  else if(role==='mess'){ ['page-mess','page-config'].forEach(x=>show.add(x)); }
+  else if(role==='user'){ ['page-reservasi','page-kamar','page-identitas'].forEach(x=>show.add(x)); }
+  else if(role==='mess'){ ['page-mess'].forEach(x=>show.add(x)); }
 
   document.querySelectorAll('#menu a.nav-link, .dropdown-menu .dropdown-item').forEach(a=>{
     const pid = a.getAttribute('data-page'); if(!pid) return;

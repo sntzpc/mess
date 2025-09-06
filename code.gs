@@ -85,9 +85,10 @@ function doPost(e){
     const action = body.action || '';
 
     // actions tanpa token:
-    if(action==='login') return login_(body);
-    if(action==='config.set') return configSet_(body);
-    if(action==='config.get') return configGet_();
+    if(action==='login')          return login_(body);
+    if(action==='auth.register')  return authRegisterPublic_(body);
+    if(action==='config.set')     return configSet_(body);
+    if(action==='config.get')     return configGet_();
 
     /*************** CONFIG SET/GET ***************/
 function configSet_(body){
@@ -176,6 +177,36 @@ function login_(body){
   return json_({ok:false, error:'invalid_credentials'});
 }
 function assertAdmin_(user){ if(user.role!=='admin') throw new Error('forbidden'); }
+
+function authRegisterPublic_(body){
+  var fullname = String((body && body.fullname) || '').trim();
+  var username = String((body && body.username) || '').trim().toLowerCase();
+  var password = String((body && body.password) || '').trim();
+
+  if (!fullname) return json_({ok:false, error:'Nama lengkap wajib diisi.'});
+  if (!username) return json_({ok:false, error:'Username wajib diisi.'});
+  if (!password) return json_({ok:false, error:'Password wajib diisi.'});
+
+  var sh = sheet('Users'); // header dibuat oleh initOnce_()
+  var vals = sh.getDataRange().getValues();
+  // kolom: ['id','username','password_hash','role','mess_name','telegram_id','created_at']
+
+  // Cek duplikat username (case-insensitive)
+  for (var i=1; i<vals.length; i++){
+    var u = String(vals[i][1]||'').trim().toLowerCase();
+    if (u && u === username){
+      return json_({ok:false, error:'Username sudah digunakan. Silakan pilih yang lain.'});
+    }
+  }
+
+  var id = genId_();
+  var now = new Date();
+  var row = [ id, username, hash_(password), 'user', '', '', now ];
+  sh.appendRow(row);
+
+  return json_({ok:true, id:id, role:'user'});
+}
+
 
 /*************** USERS ***************/
 function usersList_(user){

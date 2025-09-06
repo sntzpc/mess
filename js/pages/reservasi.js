@@ -13,7 +13,35 @@ export function initReservasi(){
   $('#rsv-name').value = localStorage.getItem('id_name')||'';
   $('#rsv-unit').value = localStorage.getItem('id_unit')||'';
   $('#rsv-title').value = localStorage.getItem('id_title')||'';
+
+  // show/hide Unit & Jabatan
+  wireRsvIdentityToggle();
 }
+
+// === SHOW/HIDE Unit & Jabatan pada form Reservasi ===
+function wireRsvIdentityToggle(){
+  const btn     = document.getElementById('btn-toggle-identity');
+  const grpUnit = document.getElementById('grp-rsv-unit');
+  const grpTit  = document.getElementById('grp-rsv-title');
+  if(!btn || !grpUnit || !grpTit) return;
+
+  // Preferensi disimpan agar konsisten
+  let show = (localStorage.getItem('rsvShowDetails') === '1');
+
+  function apply(){
+    grpUnit.classList.toggle('d-none', !show);
+    grpTit.classList.toggle('d-none', !show);
+    btn.textContent = show ? 'Sembunyikan Unit & Jabatan' : 'Tampilkan Unit & Jabatan';
+  }
+  apply();
+
+  btn.addEventListener('click', ()=>{
+    show = !show;
+    localStorage.setItem('rsvShowDetails', show ? '1' : '0');
+    apply();
+  });
+}
+
 
 let uploadedGuests = null;
 
