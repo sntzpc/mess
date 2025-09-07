@@ -17,6 +17,7 @@ export function showRegister(){
   const inpFull = document.getElementById('reg-fullname');
   const inpUser = document.getElementById('reg-username');
   const inpPass = document.getElementById('reg-password');
+  const inpTele = document.getElementById('reg-tele');
   const btnBack = document.getElementById('btn-reg-back');
   const btnSubm = document.getElementById('btn-reg-submit');
 
@@ -44,6 +45,7 @@ export function showRegister(){
     const fullname = (inpFull?.value||'').trim();
     const username = slugifyUsername(inpUser?.value||'');
     const password = (inpPass?.value||'').trim();
+    const telegram_id = (inpTele?.value||'').replace(/[^\d\-]/g,'').trim();
 
     if(!fullname){ showNotif('Nama lengkap wajib diisi.', false); return; }
     if(!username){ showNotif('Username wajib diisi.', false); return; }
@@ -51,7 +53,7 @@ export function showRegister(){
 
     btnSubm?.setAttribute('disabled','disabled');
     try{
-      const r = await api('auth.register', { fullname, username, password });
+      const r = await api('auth.register', { fullname, username, password, telegram_id });
       if(!r || !r.ok){
         showNotif(r?.error || 'Pendaftaran gagal.', false);
         return;

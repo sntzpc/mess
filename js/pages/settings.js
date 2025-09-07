@@ -22,6 +22,26 @@ export function initSettings(){
     if(rn){ rn.value=n; } if(ru){ ru.value=u; } if(rt){ rt.value=t; }
   });
 
+  // === ADD: sisipkan info Notifikasi Telegram di bawah input Identitas ===
+(function addTelegramNote(){
+  // cari baris input (Nama/Unit/Jabatan) lalu sisipkan setelahnya
+  const rowInputs = document.querySelector('#page-identitas .row.g-2');
+  if (!rowInputs) return;
+
+  // hindari duplikasi jika fungsi ini terpanggil lebih dari sekali
+  if (document.getElementById('id-telegram-note')) return;
+
+  rowInputs.insertAdjacentHTML('afterend', `
+    <div id="id-telegram-note" class="mt-2">
+      <hr />
+      <small class="text-muted">
+        Notifikasi Via Telegram
+        <a style="text-decoration: underline; color:#020202;" href="http://t.me/mess_sntzBot">Mess SNTZ</a>
+      </small>
+    </div>
+  `);
+})();
+
   // ======================
   // CONFIG TELEGRAM (Admin)
   // ======================

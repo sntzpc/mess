@@ -74,6 +74,8 @@
               </div>
               <button id="btn-login" class="btn btn-primary w-100">Masuk</button>
               <div class="text-center mt-3"><a href="#" id="lnk-register">Belum punya akun? Daftar</a></div>
+              <hr />
+              <small class="text-muted">Notifikasi Via Telegram <a style="text-decoration: underline; color:#020202;" href="http://t.me/mess_sntzBot">Mess SNTZ</a></small>
             </div>
           </div>
         </div>
@@ -273,6 +275,13 @@
               <input id="reg-password" type="password" class="form-control" value="user123" required>
               <div class="form-text">Hindari password sensitif. Disarankan gunakan <b>user123</b> saja.</div>
             </div>
+            <!-- === ADD: Telegram ID (opsional) === -->
+            <div class="mb-3">
+                <label class="form-label">Telegram ID <span class="text-muted">(opsional)</span></label>
+                <input id="reg-tele" class="form-control" inputmode="numeric" pattern="[0-9\-]*" placeholder="mis. 123456789">
+                <div class="form-text">Isi ID Telegram Anda untuk menerima notifikasi dari bot (boleh dikosongkan).</div>
+            </div>
+            <!-- === END ADD === -->
 
             <div class="d-flex justify-content-between">
               <button type="button" id="btn-reg-back" class="btn btn-light">Kembali</button>
