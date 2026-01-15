@@ -179,9 +179,10 @@ function login_(body){
 function assertAdmin_(user){ if(user.role!=='admin') throw new Error('forbidden'); }
 
 function authRegisterPublic_(body){
-  var fullname = String((body && body.fullname) || '').trim();
-  var username = String((body && body.username) || '').trim().toLowerCase();
-  var password = String((body && body.password) || '').trim();
+  var fullname    = String((body && body.fullname)    || '').trim();
+  var username    = String((body && body.username)    || '').trim().toLowerCase();
+  var password    = String((body && body.password)    || '').trim();
+  var telegram_id = String((body && body.telegram_id) || '').trim();          // <-- ADD
 
   if (!fullname) return json_({ok:false, error:'Nama lengkap wajib diisi.'});
   if (!username) return json_({ok:false, error:'Username wajib diisi.'});
@@ -201,11 +202,13 @@ function authRegisterPublic_(body){
 
   var id = genId_();
   var now = new Date();
-  var row = [ id, username, hash_(password), 'user', '', '', now ];
+  //            id, username,       password_hash,       role,   mess_name, telegram_id,  created_at
+  var row = [   id, username,       hash_(password),     'user', '',        telegram_id,  now ];   // <-- SAVE telegram_id
   sh.appendRow(row);
 
   return json_({ok:true, id:id, role:'user'});
 }
+
 
 
 /*************** USERS ***************/
@@ -1188,5 +1191,3 @@ function notifyTest_(user, body){
     }
   });
 }
-
-
