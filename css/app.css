@@ -430,6 +430,23 @@ table{white-space:nowrap;margin-bottom:0!important}
   min-height:64px;
 }
 .cal-detail-mini i{font-size:1.35rem;color:#93c5fd}
+
+.cal-day-event-box{
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  padding:10px 12px;
+  background:#f8fafc;
+  min-height:96px;
+}
+.cal-day-event-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:start;
+  padding:7px 0;
+  border-top:1px dashed #cbd5e1;
+}
+.cal-day-event-row:first-of-type{border-top:0;padding-top:0}
 .cal-detail-room-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -448,7 +465,7 @@ table{white-space:nowrap;margin-bottom:0!important}
 .cal-detail-guest-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .cal-detail-guest-list li{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(70px,120px);
+  grid-template-columns:minmax(0,1.4fr) minmax(70px,.8fr) minmax(110px,.9fr) auto;
   gap:8px;
   align-items:center;
   border-top:1px dashed #cbd5e1;
@@ -457,6 +474,8 @@ table{white-space:nowrap;margin-bottom:0!important}
 }
 .cal-detail-guest-list .guest-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal-detail-guest-list .guest-unit{font-size:.8rem;color:#64748b;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-detail-guest-list .guest-period{font-size:.78rem;color:#475569;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-detail-guest-list .guest-source{font-size:.68rem;justify-self:end;white-space:nowrap}
 .cal-empty-badges{display:flex;flex-wrap:wrap;gap:6px}
 @media(max-width:992px){.cal-detail-room-grid{grid-template-columns:1fr}}
-@media(max-width:576px){.cal-detail-status{align-items:flex-start}.cal-detail-guest-list li{grid-template-columns:1fr}.cal-detail-guest-list .guest-unit{text-align:left}}
+@media(max-width:576px){.cal-detail-status{align-items:flex-start}.cal-detail-guest-list li{grid-template-columns:1fr}.cal-detail-guest-list .guest-unit,.cal-detail-guest-list .guest-period{text-align:left}.cal-detail-guest-list .guest-source{justify-self:start}}

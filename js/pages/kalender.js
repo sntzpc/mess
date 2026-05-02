@@ -276,6 +276,11 @@ function renderDayDetailBody(day, ymd, today){
       ${detailMiniCard('Check-out', day.checkouts || 0, 'box-arrow-right')}
     </div>
 
+    <div class="row g-2 mb-3">
+      <div class="col-md-6">${dayEventList('Check-in Tanggal Ini', day.checkin_details || [], 'box-arrow-in-right')}</div>
+      <div class="col-md-6">${dayEventList('Check-out Tanggal Ini', day.checkout_details || [], 'box-arrow-right')}</div>
+    </div>
+
     <div class="mb-3">
       <div class="fw-bold mb-2">Agenda Berjalan</div>
       <div>${agendaHtml}</div>
@@ -309,16 +314,48 @@ function detailMiniCard(label, value, icon){
   return `<div class="col-6 col-md-4 col-xl-2"><div class="cal-detail-mini"><i class="bi bi-${icon}"></i><div><div class="small text-muted">${esc(label)}</div><div class="fw-bold">${esc(value)}</div></div></div></div>`;
 }
 
+function dayEventList(title, rows, icon){
+  const items = (rows || []).slice(0, 12).map(r => {
+    const badge = r.source === 'actual' ? 'History' : 'Rencana';
+    const badgeCls = r.source === 'actual' ? 'text-bg-secondary' : 'text-bg-info';
+    return `
+      <div class="cal-day-event-row">
+        <div class="min-w-0">
+          <div class="fw-bold text-truncate">${esc(r.name || '-')}</div>
+          <div class="small text-muted text-truncate">${esc(r.agenda || '-')}</div>
+          <div class="small"><span class="badge text-bg-light border">${esc(r.mess || '-')}</span> <span class="badge text-bg-primary">Kamar ${esc(r.room || '-')}</span></div>
+        </div>
+        <span class="badge ${badgeCls}">${badge}</span>
+      </div>`;
+  }).join('');
+  const more = (rows || []).length > 12 ? `<div class="small text-muted mt-1">+${(rows || []).length - 12} data lainnya</div>` : '';
+  return `
+    <div class="cal-day-event-box">
+      <div class="fw-bold mb-2"><i class="bi bi-${icon}"></i> ${esc(title)}</div>
+      ${items || '<div class="text-muted small">Tidak ada data.</div>'}
+      ${more}
+    </div>`;
+}
+
 function roomDetailCard(r){
   const used = Number(r.used || 0);
   const cap = Number(r.capacity || 0);
   const cls = cap > 0 && used > cap ? 'conflict' : (cap > 0 && used >= cap ? 'full' : 'occupied');
   const agendaBadges = Object.keys(r.agendas || {}).map(a => `<span class="badge text-bg-light border me-1 mb-1">${esc(a)}</span>`).join('');
-  const guests = (r.guests || []).map((g, idx) => `
+  const guests = (r.guests || []).map((g, idx) => {
+    const source = g.source === 'actual' ? 'History' : 'Rencana';
+    const period = g.source === 'actual'
+      ? `${esc(g.checkin_actual || '-') } ➜ ${esc(g.checkout_actual || '-')}`
+      : `${esc(g.checkin_plan || '-') } ➜ ${esc(g.checkout_plan || '-')}`;
+    const badgeCls = g.source === 'actual' ? 'text-bg-secondary' : 'text-bg-info';
+    return `
     <li>
       <span class="guest-name text-truncate">${idx+1}. ${esc(g.name || g)}</span>
       <span class="guest-unit text-truncate">${esc(g.unit || g.title || '')}</span>
-    </li>`).join('');
+      <span class="guest-period text-truncate">${period}</span>
+      <span class="guest-source badge ${badgeCls}">${source}</span>
+    </li>`;
+  }).join('');
   return `
     <div class="cal-detail-room ${cls}">
       <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
