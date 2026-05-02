@@ -46,6 +46,10 @@ function onReady(){
 }
 
 function bootstrap(){
+  if(window.__MESS_DISABLE_AUTH_BOOTSTRAP__){
+    initQrPublicFromUrl();
+    return;
+  }
   // QR publik tanpa login: jika URL berisi ?qr=..., tampilkan hanya halaman publik dan hentikan init menu/login.
   // Ini harus menjadi proses pertama sebelum wireAuth(), karena wireAuth akan me-redirect ke halaman login.
   if(initQrPublicFromUrl()) return;

@@ -13,23 +13,24 @@ function unique(arr){ return [...new Set(arr.filter(Boolean))]; }
 
 function getQrParam(){
   try{
+    if(window.__MESS_QR_TOKEN__) return String(window.__MESS_QR_TOKEN__ || '').trim();
     const url = new URL(window.location.href);
-    const q = url.searchParams.get('qr') || url.searchParams.get('guest_qr');
+    const q = url.searchParams.get('qr') || url.searchParams.get('guest_qr') || url.searchParams.get('qr_token');
     if(q) return q;
 
     // Mendukung beberapa bentuk URL hasil scan QR:
-    // 1) https://sntcpc.github.io/mess?qr=TOKEN
-    // 2) https://sntcpc.github.io/mess/?qr=TOKEN
-    // 3) https://sntcpc.github.io/mess#qr=TOKEN
-    // 4) https://sntcpc.github.io/mess#/qr/TOKEN atau #/?qr=TOKEN
+    // 1) https://sntzpc.github.io/mess/?qr=TOKEN
+    // 2) https://sntzpc.github.io/mess?qr=TOKEN
+    // 3) https://sntzpc.github.io/mess#qr=TOKEN
+    // 4) https://sntzpc.github.io/mess#/qr/TOKEN atau #/?qr=TOKEN
     const hash = String(url.hash || '');
-    const m1 = hash.match(/[?#&](?:qr|guest_qr)=([^&]+)/i) || hash.match(/(?:^#|[\/?#&])(?:qr|guest_qr)=([^&]+)/i);
+    const m1 = hash.match(/[?#&](?:qr|guest_qr|qr_token)=([^&]+)/i) || hash.match(/(?:^#|[\/?#&])(?:qr|guest_qr|qr_token)=([^&]+)/i);
     if(m1) return decodeURIComponent(m1[1]);
     const m2 = hash.match(/\/qr\/([^/?#&]+)/i);
     if(m2) return decodeURIComponent(m2[1]);
 
     const href = String(window.location.href || '');
-    const m3 = href.match(/[?&#](?:qr|guest_qr)=([^&]+)/i);
+    const m3 = href.match(/[?&#](?:qr|guest_qr|qr_token)=([^&]+)/i);
     return m3 ? decodeURIComponent(m3[1]) : '';
   }catch(_){ return ''; }
 }
@@ -52,7 +53,7 @@ function appBaseUrl(){
   // QR harus selalu mengarah ke alamat produksi GitHub Pages agar dapat discan tamu dari HP.
   // Fallback tetap memakai lokasi saat ini jika PUBLIC_APP_URL belum diisi.
   const fixed = String(APP_CONFIG.PUBLIC_APP_URL || '').trim();
-  if(fixed) return fixed.replace(/\/+$/, '/') ;
+  if(fixed) return fixed.replace(/\/+$/, '') + '/';
   const url = new URL(window.location.href);
   url.search = '';
   url.hash = '';

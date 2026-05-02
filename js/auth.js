@@ -4,9 +4,9 @@ import { showNotif, go } from './util.js';
 function hasPublicQrParam(){
   try{
     const href = String(window.location.href || '');
-    if(/[?&#](qr|guest_qr)=/i.test(href)) return true;
+    if(/[?&#](qr|guest_qr|qr_token)=/i.test(href)) return true;
     const url = new URL(window.location.href);
-    return !!(url.searchParams.get('qr') || url.searchParams.get('guest_qr') || url.hash.match(/(?:qr|guest_qr)=([^&]+)/i) || url.hash.match(/\/qr\//i));
+    return !!(url.searchParams.get('qr') || url.searchParams.get('guest_qr') || url.searchParams.get('qr_token') || url.hash.match(/(?:qr|guest_qr|qr_token)=([^&]+)/i) || url.hash.match(/\/qr\//i));
   }catch(_){ return false; }
 }
 
