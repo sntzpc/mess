@@ -684,3 +684,226 @@ body.qr-public-mode .container.my-3{max-width:980px;}
   }
   body.printing-qr .qr-card-room span{color:#111827!important;}
 }
+
+/* ===== Cetak Kartu Peserta / Name Tag A4 ===== */
+.participant-card-sheet{
+  --card-logo-size:14mm;
+  --card-qr-size:30mm;
+  --card-name-size:12mm;
+  --card-title-size:5.4mm;
+  --card-name-top:0mm;
+  display:grid;
+  justify-content:center;
+  align-items:start;
+  gap:4mm;
+  background:#f8fafc;
+  padding:10mm;
+  border-radius:18px;
+}
+.participant-card-sheet.card-landscape,
+.participant-card-sheet.card-portrait{grid-template-columns:1fr;}
+.participant-card-page{
+  width:210mm;
+  min-height:297mm;
+  background:#fff;
+  box-sizing:border-box;
+  padding:5mm;
+  display:grid;
+  justify-content:start;
+  align-content:start;
+  gap:0;
+  box-shadow:0 12px 28px rgba(15,23,42,.12);
+  border:1px solid #e5e7eb;
+}
+.card-landscape .participant-card-page{
+  grid-template-columns:repeat(2, 92mm);
+  grid-auto-rows:58mm;
+}
+.card-portrait .participant-card-page{
+  grid-template-columns:repeat(3, 58mm);
+  grid-auto-rows:92mm;
+}
+.participant-card{
+  width:92mm;
+  height:58mm;
+  background:#fff;
+  color:#000;
+  border:1px dashed #111;
+  box-sizing:border-box;
+  overflow:hidden;
+  break-inside:avoid;
+  page-break-inside:avoid;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  padding:2.5mm 3mm;
+  font-family:Georgia, 'Times New Roman', serif;
+  print-color-adjust:exact;
+  -webkit-print-color-adjust:exact;
+}
+.card-portrait .participant-card{
+  width:58mm;
+  height:92mm;
+  padding:2.5mm;
+}
+.cut-strong .participant-card{border:1.4px solid #111;}
+.cut-none .participant-card{border-color:transparent;}
+.participant-header{
+  display:grid;
+  grid-template-columns:var(--card-logo-size) 1fr;
+  gap:2.4mm;
+  align-items:center;
+  min-height:var(--card-logo-size);
+}
+.participant-logo,
+.participant-logo-placeholder{
+  width:var(--card-logo-size);
+  height:var(--card-logo-size);
+  object-fit:contain;
+  display:block;
+}
+.participant-logo-placeholder{
+  border:1px solid #94a3b8;
+  border-radius:2mm;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:Arial, sans-serif;
+  font-weight:800;
+  font-size:2.5mm;
+  color:#64748b;
+}
+.participant-training{min-width:0;line-height:1.05;}
+.participant-title{
+  font-size:var(--card-title-size);
+  font-weight:900;
+  letter-spacing:-.02em;
+  text-transform:uppercase;
+  white-space:normal;
+}
+.participant-location{
+  font-size:calc(var(--card-title-size) * .82);
+  font-weight:900;
+  text-transform:uppercase;
+  margin-top:.7mm;
+}
+.participant-date{
+  font-family:Arial, sans-serif;
+  font-size:2.2mm;
+  font-weight:800;
+  margin-top:.8mm;
+}
+.participant-body{
+  flex:1;
+  display:grid;
+  grid-template-columns:var(--card-qr-size) 1fr;
+  gap:5mm;
+  align-items:center;
+  padding-top:1.8mm;
+}
+.participant-card.qr-right .participant-body{grid-template-columns:1fr var(--card-qr-size);}
+.participant-card-qr{
+  width:var(--card-qr-size);
+  height:var(--card-qr-size);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.participant-card-qr img,
+.participant-card-qr canvas{
+  width:var(--card-qr-size)!important;
+  height:var(--card-qr-size)!important;
+  max-width:var(--card-qr-size)!important;
+  max-height:var(--card-qr-size)!important;
+}
+.participant-name-wrap{
+  min-width:0;
+  transform:translateY(var(--card-name-top));
+  text-align:center;
+}
+.participant-name{
+  font-size:var(--card-name-size);
+  line-height:1.08;
+  font-weight:900;
+  letter-spacing:-.04em;
+  word-break:normal;
+}
+.participant-meta{
+  font-family:Arial, sans-serif;
+  font-size:2.2mm;
+  font-weight:800;
+  margin-top:2mm;
+  color:#111827;
+}
+.card-portrait .participant-header{
+  grid-template-columns:var(--card-logo-size) 1fr;
+  gap:1.5mm;
+}
+.card-portrait .participant-body{
+  grid-template-columns:1fr;
+  gap:2mm;
+  justify-items:center;
+  text-align:center;
+}
+.card-portrait .participant-card.qr-right .participant-body{grid-template-columns:1fr;}
+.card-portrait .participant-card-qr{order:1;}
+.card-portrait .participant-name-wrap{order:2;}
+.card-portrait .participant-name{font-size:calc(var(--card-name-size) * .82);}
+.card-portrait .participant-title{font-size:calc(var(--card-title-size) * .82);}
+.card-portrait .participant-location{font-size:calc(var(--card-title-size) * .68);}
+
+@media(max-width:992px){
+  .participant-card-sheet.card-landscape,
+  .participant-card-sheet.card-portrait{grid-template-columns:1fr;justify-items:center;overflow:auto;}
+  .participant-card-page{transform-origin:top center;max-width:100%;overflow:hidden;}
+}
+
+@media print{
+  @page{size:A4 portrait;margin:0;}
+  html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;}
+  body.printing-card .navbar,
+  body.printing-card .no-print,
+  body.printing-card #notif,
+  body.printing-card #spl,
+  body.printing-card .page:not(#page-kartu-peserta){display:none!important;}
+  body.printing-card .container.my-3{max-width:none!important;width:210mm!important;margin:0!important;padding:0!important;}
+  body.printing-card #page-kartu-peserta{display:block!important;animation:none!important;margin:0!important;padding:0!important;}
+  body.printing-card #card-print-area{margin:0!important;}
+  body.printing-card .participant-card-sheet{
+    width:210mm!important;
+    background:#fff!important;
+    border-radius:0!important;
+    padding:0!important;
+    gap:0!important;
+    display:block!important;
+  }
+  body.printing-card .participant-card-page{
+    width:210mm!important;
+    height:297mm!important;
+    min-height:297mm!important;
+    max-height:297mm!important;
+    padding:5mm!important;
+    margin:0!important;
+    box-shadow:none!important;
+    border:0!important;
+    page-break-after:always!important;
+    break-after:page!important;
+    overflow:hidden!important;
+  }
+  body.printing-card .participant-card-page:last-child{
+    page-break-after:auto!important;
+    break-after:auto!important;
+  }
+  body.printing-card .card-landscape .participant-card-page{
+    display:grid!important;
+    grid-template-columns:repeat(2, 92mm)!important;
+    grid-auto-rows:58mm!important;
+  }
+  body.printing-card .card-portrait .participant-card-page{
+    display:grid!important;
+    grid-template-columns:repeat(3, 58mm)!important;
+    grid-auto-rows:92mm!important;
+  }
+  body.printing-card .participant-card{box-shadow:none!important;margin:0!important;}
+}

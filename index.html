@@ -56,8 +56,14 @@
           <li class="nav-item"><a class="nav-link" data-page="page-approval" href="#">Persetujuan</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-mess" href="#">Mess</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-jurnal" href="#">Jurnal</a></li>
-          <li class="nav-item"><a class="nav-link" data-page="page-label-tamu" href="#">Cetak Nama Tamu</a></li>
-          <li class="nav-item"><a class="nav-link" data-page="page-qr-tamu" href="#">Cetak QR Check-in/out</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Cetak</a>
+            <ul class="dropdown-menu" data-bs-auto-close="outside">
+              <li><a class="dropdown-item subpage" data-page="page-label-tamu" href="#">Cetak Nama Tamu</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-qr-tamu" href="#">Cetak QR Check-in/out</a></li>
+              <li><a class="dropdown-item subpage" data-page="page-kartu-peserta" href="#">Cetak Kartu Peserta</a></li>
+            </ul>
+          </li>
           <li class="nav-item"><a class="nav-link" data-page="page-stat" href="#">Statistik</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Pengaturan</a>
@@ -384,6 +390,105 @@
       </div>
       <div id="qr-summary" class="alert alert-info mt-3 no-print d-none"></div>
       <div id="qr-print-area" class="qr-print-area mt-3"></div>
+    </div>
+
+
+    <!-- CETAK KARTU PESERTA / NAME TAG 58 x 92 mm -->
+    <div id="page-kartu-peserta" class="page">
+      <div class="card shadow-sm no-print">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <h5 class="mb-1">Cetak Kartu Peserta</h5>
+              <div class="text-muted small">Cetak kartu tanda peserta ukuran name tag pada kertas A4, lengkap QR check-in/check-out dan garis pandu potong.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button id="btn-card-refresh" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+              <button id="btn-card-save-logo" class="btn btn-outline-secondary btn-sm"><i class="bi bi-image"></i> Simpan Logo Lokal</button>
+              <button id="btn-card-print" class="btn btn-danger btn-sm"><i class="bi bi-printer"></i> Print / Simpan PDF</button>
+            </div>
+          </div>
+
+          <div class="row g-2 align-items-end">
+            <div class="col-lg-4 col-md-6">
+              <label class="form-label">Agenda / Peserta</label>
+              <select id="card-agenda" class="form-select"></select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Mess</label>
+              <select id="card-mess" class="form-select"></select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Judul Pelatihan</label>
+              <input id="card-title" class="form-control" placeholder="PRE KLP1 AGRO 16/2024" />
+            </div>
+            <div class="col-lg-2 col-md-6 d-grid">
+              <button id="btn-card-show" class="btn btn-primary"><i class="bi bi-eye"></i> Tampilkan</button>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Lokasi Pelatihan</label>
+              <input id="card-location" class="form-control" placeholder="SERIANG TRAINING CENTER" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Tanggal Pelatihan</label>
+              <input id="card-date-text" class="form-control" placeholder="01 - 15 Mei 2026" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+              <label class="form-label">Orientasi</label>
+              <select id="card-orientation" class="form-select">
+                <option value="landscape">Landscape 92 x 58 mm</option>
+                <option value="portrait">Portrait 58 x 92 mm</option>
+              </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+              <label class="form-label">Posisi QR</label>
+              <select id="card-qr-position" class="form-select">
+                <option value="left">Kiri</option>
+                <option value="right">Kanan</option>
+              </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+              <label class="form-label">Logo</label>
+              <input id="card-logo-file" type="file" accept="image/*" class="form-control" />
+            </div>
+          </div>
+
+          <hr />
+          <div class="row g-3">
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Ukuran Logo: <span id="card-logo-size-val">14</span> mm</label>
+              <input id="card-logo-size" type="range" class="form-range" min="8" max="28" value="14" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Ukuran QR: <span id="card-qr-size-val">30</span> mm</label>
+              <input id="card-qr-size" type="range" class="form-range" min="22" max="42" value="30" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Ukuran Nama: <span id="card-name-size-val">12</span> mm</label>
+              <input id="card-name-size" type="range" class="form-range" min="7" max="18" value="12" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Ukuran Judul: <span id="card-title-size-val">5.4</span> mm</label>
+              <input id="card-title-size" type="range" class="form-range" min="3.5" max="8" value="5.4" step="0.1" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Geser Blok Nama: <span id="card-name-top-val">0</span> mm</label>
+              <input id="card-name-top" type="range" class="form-range" min="-8" max="12" value="0" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Ketebalan Garis Potong</label>
+              <select id="card-cut-style" class="form-select">
+                <option value="guide">Garis pandu tipis</option>
+                <option value="strong">Garis pandu tebal</option>
+                <option value="none">Tanpa garis pandu</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="card-summary" class="alert alert-info mt-3 no-print d-none"></div>
+      <div id="card-print-area" class="participant-card-sheet mt-3"></div>
     </div>
 
 

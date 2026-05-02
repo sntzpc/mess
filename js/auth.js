@@ -68,9 +68,9 @@ export function applyRoleUI(){
   document.getElementById('whoami').textContent = state.user ? `${state.user.username} (${role})` : '';
 
   const show = new Set();
-  if(role==='admin'){ ['page-reservasi','page-kamar','page-kalender','page-approval','page-mess','page-jurnal','page-label-tamu','page-qr-tamu','page-identitas','page-kelola-mess','page-kelola-kamar','page-kelola-user','page-config','page-stat'].forEach(x=>show.add(x)); }
+  if(role==='admin'){ ['page-reservasi','page-kamar','page-kalender','page-approval','page-mess','page-jurnal','page-label-tamu','page-qr-tamu','page-kartu-peserta','page-identitas','page-kelola-mess','page-kelola-kamar','page-kelola-user','page-config','page-stat'].forEach(x=>show.add(x)); }
   else if(role==='user'){ ['page-reservasi','page-kamar','page-identitas'].forEach(x=>show.add(x)); }
-  else if(role==='mess'){ ['page-mess','page-kalender','page-label-tamu','page-qr-tamu'].forEach(x=>show.add(x)); }
+  else if(role==='mess'){ ['page-mess','page-kalender','page-label-tamu','page-qr-tamu','page-kartu-peserta'].forEach(x=>show.add(x)); }
 
   document.querySelectorAll('#menu a.nav-link, .dropdown-menu .dropdown-item').forEach(a=>{
     const pid = a.getAttribute('data-page'); if(!pid) return;
