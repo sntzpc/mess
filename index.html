@@ -37,6 +37,7 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="menu">
           <li class="nav-item"><a class="nav-link" data-page="page-reservasi" href="#">Reservasi</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-kamar" href="#">Kamar</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-kalender" href="#">Kalender Okupansi</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-approval" href="#">Persetujuan</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-mess" href="#">Mess</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-jurnal" href="#">Jurnal</a></li>
@@ -137,6 +138,98 @@
         <button id="btn-kamar-tampil" class="btn btn-primary">Tampilkan</button>
       </div>
       <div id="kamar-cards" class="row g-3"></div>
+    </div>
+
+
+    <!-- KALENDER OKUPANSI -->
+    <div id="page-kalender" class="page">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <h5 class="mb-1">Kalender Okupansi Mess & Kamar</h5>
+              <div class="text-muted small">Pantau kamar penuh, kamar kosong, agenda berjalan, potensi bentrok, check-in dan check-out hari ini.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button id="btn-cal-prev" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i> Bulan Sebelumnya</button>
+              <button id="btn-cal-today" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Bulan Ini</button>
+              <button id="btn-cal-next" class="btn btn-outline-secondary btn-sm">Bulan Berikutnya <i class="bi bi-chevron-right"></i></button>
+            </div>
+          </div>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label">Bulan</label>
+              <input id="cal-month" type="month" class="form-control" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Mess</label>
+              <select id="cal-mess" class="form-select"></select>
+            </div>
+            <div class="col-md-2 d-grid">
+              <button id="btn-cal-show" class="btn btn-primary"><i class="bi bi-search"></i> Tampilkan</button>
+            </div>
+            <div class="col-md-3">
+              <div class="small text-muted">Keterangan</div>
+              <div class="d-flex flex-wrap gap-2 cal-legend">
+                <span><i class="cal-dot kosong"></i> Kosong</span>
+                <span><i class="cal-dot terisi"></i> Terisi</span>
+                <span><i class="cal-dot penuh"></i> Penuh</span>
+                <span><i class="cal-dot bentrok"></i> Bentrok</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="cal-kpi" class="row g-3 mb-3"></div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="mb-3"><i class="bi bi-box-arrow-in-right"></i> Tamu Check-in Hari Ini</h6>
+              <div id="cal-checkins" class="cal-mini-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="mb-3"><i class="bi bi-box-arrow-right"></i> Tamu Check-out Hari Ini</h6>
+              <div id="cal-checkouts" class="cal-mini-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h6 class="mb-0"><i class="bi bi-calendar3"></i> Kalender Bulanan</h6>
+            <div id="cal-title" class="fw-bold text-primary"></div>
+          </div>
+          <div id="cal-grid" class="cal-grid"></div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="mb-3"><i class="bi bi-door-open"></i> Ringkasan Kamar per Hari</h6>
+              <div id="cal-room-table" class="scroll-x"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="mb-3"><i class="bi bi-exclamation-triangle"></i> Potensi Bentrok / Over Kapasitas</h6>
+              <div id="cal-conflicts" class="cal-mini-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- PERSETUJUAN -->

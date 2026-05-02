@@ -5,6 +5,7 @@ import { go, closeMobileNavbar } from './util.js';
 
 import { initReservasi } from './pages/reservasi.js';
 import { initKamar } from './pages/kamar.js';
+import { initKalender, loadKalender } from './pages/kalender.js';
 import { showApproval } from './pages/approval.js';
 import { initMess, loadMessQueue } from './pages/mess.js';
 import { initJurnal } from './pages/jurnal.js';
@@ -15,6 +16,7 @@ import { initSettings, onPageShown as settingsOnPageShown } from './pages/settin
 function onShow(pid){
   // dipanggil setiap pindah halaman
   if(pid==='page-approval') showApproval();
+  if(pid==='page-kalender') loadKalender();
   if(pid==='page-mess') loadMessQueue();
   if(pid==='page-label-tamu') loadLabelAgendas();
   if(pid==='page-stat'){
@@ -49,6 +51,7 @@ function bootstrap(){
   // init page modules
   initReservasi();
   initKamar();
+  initKalender();
   initMess();
   initJurnal();
   initLabelTamu();

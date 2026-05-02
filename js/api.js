@@ -66,7 +66,7 @@ export async function initCommonData(){
 
 export function fillMessSelects(){
   const opts = state.cacheMess.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-  ['rsv-mess','kamar-mess','kk-mess','mess-choose'].forEach(id => {
+  ['rsv-mess','kamar-mess','kk-mess','mess-choose','cal-mess'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.innerHTML = `<option value="">- pilih mess -</option>${opts}`;
   });

@@ -315,3 +315,33 @@ table{white-space:nowrap;margin-bottom:0!important}
   .label-print-area{grid-template-columns:1fr;}
   .guest-label-mess{max-width:55%;}
 }
+
+
+/* ===== Kalender Okupansi Mess & Kamar ===== */
+.cal-legend{font-size:.82rem;font-weight:750;color:#475569}
+.cal-dot{display:inline-block;width:11px;height:11px;border-radius:999px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(15,23,42,.15)}
+.cal-dot.kosong{background:#e2e8f0}.cal-dot.terisi{background:#bfdbfe}.cal-dot.penuh{background:#fde68a}.cal-dot.bentrok{background:#fecaca}
+.cal-kpi-value{font-size:1.9rem!important}.cal-kpi-icon{font-size:2rem;color:#93c5fd}
+.cal-week-head{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:8px;font-size:.82rem;font-weight:850;color:#475569;text-align:center;text-transform:uppercase;letter-spacing:.04em}
+.cal-month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch}
+.cal-day{min-height:150px;border:1px solid #e2e8f0;border-radius:16px;padding:10px;background:#fff;overflow:hidden;position:relative;break-inside:avoid;transition:.15s ease}
+.cal-day:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(15,23,42,.12);z-index:2}
+.cal-day.blank{background:transparent;border:0;box-shadow:none;min-height:0}
+.cal-day.today{outline:3px solid rgba(37,99,235,.20)}
+.cal-day.kosong{background:linear-gradient(135deg,#f8fafc,#ffffff)}
+.cal-day.terisi{background:linear-gradient(135deg,#eff6ff,#ffffff);border-color:#bfdbfe}
+.cal-day.penuh{background:linear-gradient(135deg,#fffbeb,#ffffff);border-color:#fde68a}
+.cal-day.bentrok{background:linear-gradient(135deg,#fef2f2,#ffffff);border-color:#fecaca}
+.cal-date{font-size:1.25rem;font-weight:900;color:#0f172a;line-height:1}
+.cal-day-stats{font-size:.76rem;color:#475569;font-weight:750;margin:.35rem 0 .45rem}
+.cal-agenda{font-size:.78rem;font-weight:800;background:rgba(37,99,235,.08);color:#1e40af;border-radius:999px;padding:.22rem .5rem;margin-bottom:4px;max-width:100%}
+.cal-agenda.muted{font-weight:650;color:#94a3b8;background:transparent;padding-left:0}
+.cal-empty-room{font-size:.72rem;color:#64748b;margin-top:5px;border-top:1px dashed #cbd5e1;padding-top:5px}
+.cal-mini-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto;padding-right:2px}
+.cal-list-item{border:1px solid #e2e8f0;border-radius:14px;padding:10px 12px;background:#fff}
+.cal-list-item.checkin{background:linear-gradient(135deg,#ecfdf5,#fff)}
+.cal-list-item.checkout{background:linear-gradient(135deg,#eff6ff,#fff)}
+.cal-list-item.conflict{background:linear-gradient(135deg,#fef2f2,#fff);border-color:#fecaca}
+@media(max-width:992px){.cal-month-grid,.cal-week-head{grid-template-columns:repeat(2,minmax(0,1fr))}.cal-week-head{display:none}.cal-day.blank{display:none}.cal-day{min-height:132px}}
+@media(max-width:576px){.cal-month-grid{grid-template-columns:1fr}.cal-day{min-height:auto}}
+@media print{#page-kalender .card{box-shadow:none!important}.cal-day{box-shadow:none!important;break-inside:avoid}.cal-month-grid{gap:5mm}.cal-week-head{gap:5mm}}
