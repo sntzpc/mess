@@ -5,6 +5,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mess SNTZ | Reservasi & Pengelolaan Kamar</title>
+  <script>
+    // QR publik harus melewati halaman login sejak awal render.
+    (function(){
+      try{
+        var href = window.location.href || '';
+        var hasQr = /[?&#](qr|guest_qr)=/i.test(href);
+        if(hasQr){
+          document.documentElement.classList.add('qr-public-boot');
+          window.__MESS_QR_PUBLIC_BOOT__ = true;
+        }
+      }catch(e){}
+    })();
+  </script>
+
   <meta name="theme-color" content="#0f172a" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +30,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -42,6 +57,7 @@
           <li class="nav-item"><a class="nav-link" data-page="page-mess" href="#">Mess</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-jurnal" href="#">Jurnal</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-label-tamu" href="#">Cetak Nama Tamu</a></li>
+          <li class="nav-item"><a class="nav-link" data-page="page-qr-tamu" href="#">Cetak QR Check-in/out</a></li>
           <li class="nav-item"><a class="nav-link" data-page="page-stat" href="#">Statistik</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Pengaturan</a>
@@ -88,6 +104,27 @@
         </div>
       </div>
     </div>
+
+    <!-- QR CHECK-IN / CHECK-OUT PUBLIK -->
+    <div id="page-qr-public" class="page" style="display:none">
+      <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+          <div class="qr-public-card card shadow-sm">
+            <div class="card-body p-4">
+              <div class="text-center mb-3">
+                <div class="qr-public-icon"><i class="bi bi-qr-code-scan"></i></div>
+                <h4 class="fw-bold mb-1">Check-in / Check-out Mandiri</h4>
+                <div class="text-muted">Seriang Training Center</div>
+              </div>
+              <div id="qr-public-content">
+                <div class="text-center text-muted py-4">Memuat data QR...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- RESERVASI -->
     <div id="page-reservasi" class="page">
@@ -305,6 +342,50 @@
       <div id="label-summary" class="alert alert-info mt-3 no-print d-none"></div>
       <div id="label-print-area" class="label-print-area mt-3"></div>
     </div>
+
+
+
+    <!-- CETAK QR CHECK-IN / CHECK-OUT -->
+    <div id="page-qr-tamu" class="page">
+      <div class="card shadow-sm no-print">
+        <div class="card-body">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+            <div>
+              <h5 class="mb-1">Cetak QR Check-in / Check-out</h5>
+              <div class="text-muted small">Pilih agenda untuk mencetak QR Code per tamu. QR dapat dipakai tanpa login untuk check-in/check-out mandiri.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button id="btn-qr-refresh" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+              <button id="btn-qr-print" class="btn btn-danger btn-sm"><i class="bi bi-printer"></i> Print / Simpan PDF</button>
+            </div>
+          </div>
+          <div class="row g-2 align-items-end">
+            <div class="col-lg-5 col-md-6">
+              <label class="form-label">Agenda</label>
+              <select id="qr-agenda" class="form-select"></select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <label class="form-label">Mess</label>
+              <select id="qr-mess" class="form-select"></select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+              <label class="form-label">Ukuran Kartu</label>
+              <select id="qr-size" class="form-select">
+                <option value="normal">Normal</option>
+                <option value="large">Besar</option>
+                <option value="compact">Padat</option>
+              </select>
+            </div>
+            <div class="col-lg-2 col-md-6 d-grid">
+              <button id="btn-qr-show" class="btn btn-primary"><i class="bi bi-eye"></i> Tampilkan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="qr-summary" class="alert alert-info mt-3 no-print d-none"></div>
+      <div id="qr-print-area" class="qr-print-area mt-3"></div>
+    </div>
+
 
     <!-- STATISTIK -->
     <div id="page-stat" class="page">

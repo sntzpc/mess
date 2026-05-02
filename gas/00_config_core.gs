@@ -155,12 +155,48 @@ function json_(obj){
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function doGet(e){ return doPost(e); } // optional: GET diarahkan ke doPost
+function jsonp_(callback, output){
+  var txt = '{}';
+  try{
+    txt = output && output.getContent ? output.getContent() : JSON.stringify(output || {});
+  }catch(e){
+    txt = JSON.stringify({ok:false, error:String(e)});
+  }
+  callback = String(callback || '').replace(/[^a-zA-Z0-9_$\.]/g, '');
+  if(!callback) callback = 'callback';
+  return ContentService
+    .createTextOutput(callback + '(' + txt + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function parseBody_(e){
+  var p = (e && e.parameter) || {};
+  if(p.payload){
+    try{ return JSON.parse(p.payload); }catch(err){ return { action:p.action || '', parse_error:String(err) }; }
+  }
+  if(e && e.postData && e.postData.contents){
+    try{ return JSON.parse(e.postData.contents); }catch(err2){ return { action:p.action || '', parse_error:String(err2) }; }
+  }
+  var body = {};
+  Object.keys(p).forEach(function(k){ if(k !== 'callback' && k !== '_' && k !== '_t') body[k] = p[k]; });
+  return body;
+}
+
+function doGet(e){
+  var out = handleRequest_(e);
+  var cb = e && e.parameter && e.parameter.callback;
+  return cb ? jsonp_(cb, out) : out;
+}
 
 function doPost(e){
+  return handleRequest_(e);
+}
+
+function handleRequest_(e){
   initOnce_();
   try{
-    const body = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    const body = parseBody_(e);
+    if(body.parse_error) return json_({ok:false, error:'bad_json', detail:body.parse_error});
     const action = body.action || '';
 
     // actions tanpa token:
@@ -168,8 +204,10 @@ function doPost(e){
     if(action==='auth.register')  return authRegisterPublic_(body);
     if(action==='config.set')     return configSet_(body);
     if(action==='config.get')     return configGet_();
+    if(action==='qr.lookup')      return qrLookupPublic_(body);
+    if(action==='qr.action')      return qrActionPublic_(body);
     // verifikasi token
-    const token = (e.parameter.token) || (body.token) || (e.parameter.Authorization) || '';
+    const token = ((e && e.parameter && e.parameter.token) || body.token || ((e && e.parameter && e.parameter.Authorization) || ''));
     const ver = verifyToken_(token);
     if(!ver.ok) return json_({ok:false, error:'unauthorized', reason:ver.reason});
     const user = ver.payload;
@@ -206,6 +244,8 @@ function doPost(e){
       case 'stats.dashboard':  return statsDashboard_(user, body);
       case 'label.agendas':    return labelAgendas_(user, body);
       case 'label.list':       return labelList_(user, body);
+      case 'qr.agendas':       return qrAgendas_(user, body);
+      case 'qr.list':          return qrList_(user, body);
       case 'calendar.overview': return calendarOverview_(user, body);
       case 'conflict.check':   return conflictCheck_(user, body);
 

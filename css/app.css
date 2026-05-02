@@ -479,3 +479,208 @@ table{white-space:nowrap;margin-bottom:0!important}
 .cal-empty-badges{display:flex;flex-wrap:wrap;gap:6px}
 @media(max-width:992px){.cal-detail-room-grid{grid-template-columns:1fr}}
 @media(max-width:576px){.cal-detail-status{align-items:flex-start}.cal-detail-guest-list li{grid-template-columns:1fr}.cal-detail-guest-list .guest-unit,.cal-detail-guest-list .guest-period{text-align:left}.cal-detail-guest-list .guest-source{justify-self:start}}
+
+/* ===== Cetak QR Check-in / Check-out ===== */
+.qr-print-area{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:14px;
+  align-items:start;
+}
+.qr-guest-card{
+  background:#fff;
+  border:1.5px solid #0f172a;
+  border-radius:18px;
+  padding:14px;
+  min-height:235px;
+  break-inside:avoid;
+  page-break-inside:avoid;
+  box-shadow:0 10px 28px rgba(15,23,42,.08);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:10px;
+}
+.qr-guest-main{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 142px;
+  gap:12px;
+  align-items:start;
+}
+.qr-card-caption{
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#475569;
+  font-weight:900;
+}
+.qr-card-name{
+  font-size:1.35rem;
+  line-height:1.08;
+  font-weight:950;
+  letter-spacing:-.035em;
+  color:#0f172a;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:clip;
+  margin:.2rem 0 .45rem;
+}
+.qr-card-name.qr-name-sm{font-size:1.14rem;letter-spacing:-.025em}
+.qr-card-name.qr-name-xs{font-size:1rem;letter-spacing:-.015em}
+.qr-card-line{
+  font-size:.89rem;
+  line-height:1.35;
+  color:#111827;
+  margin-bottom:3px;
+}
+.qr-card-room{
+  margin-top:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  border-top:2px solid #0f172a;
+  padding-top:8px;
+  font-weight:850;
+}
+.qr-card-room span{color:#1d4ed8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54%}
+.qr-card-room b{font-size:1.05rem;color:#0f172a;white-space:nowrap}
+.qr-code-box{
+  width:142px;
+  height:142px;
+  border:1px solid #cbd5e1;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px;
+  background:#fff;
+}
+.qr-code-box img,
+.qr-code-box canvas{max-width:128px!important;max-height:128px!important}
+.qr-card-foot{
+  border-top:1px dashed #94a3b8;
+  padding-top:7px;
+  font-size:.75rem;
+  color:#475569;
+  font-weight:750;
+}
+.qr-size-large{grid-template-columns:1fr;}
+.qr-size-large .qr-guest-card{min-height:300px;padding:18px;}
+.qr-size-large .qr-guest-main{grid-template-columns:minmax(0,1fr) 172px;}
+.qr-size-large .qr-code-box{width:172px;height:172px;}
+.qr-size-large .qr-code-box img,.qr-size-large .qr-code-box canvas{max-width:156px!important;max-height:156px!important}
+.qr-size-large .qr-card-name{font-size:1.8rem;}
+.qr-size-large .qr-card-line{font-size:1.02rem;}
+.qr-size-compact{grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px;}
+.qr-size-compact .qr-guest-card{min-height:205px;padding:11px;border-radius:14px;}
+.qr-size-compact .qr-guest-main{grid-template-columns:minmax(0,1fr) 116px;gap:9px;}
+.qr-size-compact .qr-code-box{width:116px;height:116px;border-radius:12px;}
+.qr-size-compact .qr-code-box img,.qr-size-compact .qr-code-box canvas{max-width:102px!important;max-height:102px!important}
+.qr-size-compact .qr-card-name{font-size:1.1rem;}
+.qr-size-compact .qr-card-line{font-size:.78rem;}
+.qr-size-compact .qr-card-foot{font-size:.68rem;}
+
+/* QR publik tanpa login */
+
+/* QR public boot: cegah halaman login tampil ketika tamu scan QR.
+   Class ini dipasang sangat awal dari index.html sebelum app.js berjalan. */
+html.qr-public-boot body{background:#f4f8fb;}
+html.qr-public-boot .navbar{display:none!important;}
+html.qr-public-boot .page{display:none!important;}
+html.qr-public-boot #page-qr-public{display:block!important;}
+html.qr-public-boot #page-login{display:none!important;}
+html.qr-public-boot #notif{z-index:1080;}
+
+body.qr-public-mode .navbar{display:none!important;}
+body.qr-public-mode .container.my-3{max-width:980px;}
+.qr-public-card{margin-top:5vh;}
+.qr-public-card::before{
+  content:"";display:block;height:7px;background:linear-gradient(90deg,#16a34a,#38bdf8,#2563eb);
+}
+.qr-public-icon{
+  width:68px;height:68px;border-radius:24px;
+  margin:0 auto .75rem;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#dcfce7,#eff6ff);
+  color:#166534;font-size:2rem;
+}
+.qr-public-detail{text-align:left;}
+.qr-public-status{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:.4rem .75rem;
+  font-size:.82rem;
+  font-weight:900;
+  background:#e2e8f0;
+  color:#334155;
+  margin-bottom:.75rem;
+}
+.qr-public-status.approved{background:#fef3c7;color:#92400e;}
+.qr-public-status.checkedin{background:#dcfce7;color:#166534;}
+.qr-public-status.checkedout{background:#dbeafe;color:#1e40af;}
+.qr-public-name{
+  font-size:2rem;
+  line-height:1.05;
+  font-weight:950;
+  color:#0f172a;
+  letter-spacing:-.045em;
+}
+.qr-public-sub{color:#64748b;font-weight:700;margin-top:.25rem;}
+.qr-public-info{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+}
+.qr-public-info div{
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  padding:10px 12px;
+  background:#f8fafc;
+}
+.qr-public-info span{
+  display:block;
+  font-size:.74rem;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-weight:900;
+  color:#64748b;
+  margin-bottom:2px;
+}
+.qr-public-info b{font-size:1rem;color:#0f172a;}
+
+@media (max-width: 768px){
+  .qr-print-area{grid-template-columns:1fr;}
+  .qr-guest-main{grid-template-columns:minmax(0,1fr) 132px;}
+  .qr-code-box{width:132px;height:132px;}
+  .qr-public-name{font-size:1.55rem;}
+}
+@media (max-width: 420px){
+  .qr-guest-main{grid-template-columns:1fr;}
+  .qr-code-box{margin:auto;}
+}
+
+@media print{
+  @page{size:A4 portrait;margin:10mm;}
+  body.printing-qr .navbar,
+  body.printing-qr .no-print,
+  body.printing-qr #notif,
+  body.printing-qr #spl,
+  body.printing-qr .page:not(#page-qr-tamu){display:none!important;}
+  body.printing-qr .container.my-3{max-width:none!important;width:100%!important;margin:0!important;padding:0!important;}
+  body.printing-qr #page-qr-tamu{display:block!important;animation:none!important;}
+  body.printing-qr #qr-print-area{margin:0!important;}
+  body.printing-qr .qr-print-area{grid-template-columns:repeat(2, minmax(0, 1fr));gap:7mm;}
+  body.printing-qr .qr-size-large{grid-template-columns:1fr;}
+  body.printing-qr .qr-guest-card{
+    box-shadow:none!important;
+    border:1.5pt solid #111827!important;
+    border-radius:10pt;
+    page-break-inside:avoid!important;
+    break-inside:avoid!important;
+    print-color-adjust:exact;
+    -webkit-print-color-adjust:exact;
+  }
+  body.printing-qr .qr-card-room span{color:#111827!important;}
+}

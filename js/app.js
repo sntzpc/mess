@@ -10,6 +10,7 @@ import { showApproval } from './pages/approval.js';
 import { initMess, loadMessQueue } from './pages/mess.js';
 import { initJurnal } from './pages/jurnal.js';
 import { initLabelTamu, loadLabelAgendas } from './pages/label_tamu.js';
+import { initQrTamu, loadQrAgendas, initQrPublicFromUrl } from './pages/qr_tamu.js';
 import { showStat } from './pages/stat.js';
 import { initSettings, onPageShown as settingsOnPageShown } from './pages/settings.js';
 
@@ -19,6 +20,7 @@ function onShow(pid){
   if(pid==='page-kalender') loadKalender();
   if(pid==='page-mess') loadMessQueue();
   if(pid==='page-label-tamu') loadLabelAgendas();
+  if(pid==='page-qr-tamu') loadQrAgendas();
   if(pid==='page-stat'){
     import('./pages/stat.js').then(mod=>{
       mod.invalidateStatKPI?.();
@@ -44,6 +46,9 @@ function onReady(){
 }
 
 function bootstrap(){
+  // QR publik tanpa login: jika URL berisi ?qr=..., tampilkan hanya halaman publik dan hentikan init menu/login.
+  // Ini harus menjadi proses pertama sebelum wireAuth(), karena wireAuth akan me-redirect ke halaman login.
+  if(initQrPublicFromUrl()) return;
   // wire router
   wireMenu(onShow);
   // wire auth
@@ -55,6 +60,7 @@ function bootstrap(){
   initMess();
   initJurnal();
   initLabelTamu();
+  initQrTamu();
   initSettings();
 }
 window.addEventListener('DOMContentLoaded', bootstrap);

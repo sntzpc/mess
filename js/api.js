@@ -24,6 +24,55 @@ export function logout(){
   location.reload();
 }
 
+function apiJsonp(action, payload = {}){
+  const url = APP_CONFIG.GAS_URL;
+  const body = { ...payload, action, token: state.token };
+  const callback = '__mess_sntz_jsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  const script = document.createElement('script');
+  const sep = url.includes('?') ? '&' : '?';
+  const qs = new URLSearchParams({
+    callback,
+    payload: JSON.stringify(body),
+    _t: String(Date.now())
+  });
+
+  return new Promise((resolve)=>{
+    let done = false;
+    const cleanup = ()=>{
+      try{ delete window[callback]; }catch(_){ window[callback] = undefined; }
+      script.remove();
+    };
+    const timer = window.setTimeout(()=>{
+      if(done) return;
+      done = true;
+      cleanup();
+      resolve({ ok:false, error:'jsonp_timeout' });
+    }, APP_CONFIG.REQUEST_TIMEOUT_MS || 45000);
+
+    window[callback] = (json)=>{
+      if(done) return;
+      done = true;
+      window.clearTimeout(timer);
+      cleanup();
+      resolve(json || {ok:false, error:'empty_jsonp'});
+    };
+    script.onerror = ()=>{
+      if(done) return;
+      done = true;
+      window.clearTimeout(timer);
+      cleanup();
+      resolve({ ok:false, error:'jsonp_load_failed' });
+    };
+    script.src = url + sep + qs.toString();
+    document.head.appendChild(script);
+  });
+}
+
+function shouldUseJsonpFirst(action){
+  // QR publik harus aman dibuka dari GitHub Pages tanpa login dan tanpa CORS fetch.
+  return action === 'qr.lookup' || action === 'qr.action';
+}
+
 export async function api(action, payload = {}){
   const url = APP_CONFIG.GAS_URL;
   if(!url){
@@ -31,23 +80,32 @@ export async function api(action, payload = {}){
     throw new Error('no_gas_url');
   }
 
-  const body = JSON.stringify({ ...payload, action, token: state.token });
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), APP_CONFIG.REQUEST_TIMEOUT_MS);
-
   block(true);
   try{
-    // Tanpa custom headers agar tetap simple request dan menghindari preflight CORS.
-    const res = await fetch(url, { method:'POST', body, signal: controller.signal });
-    const json = await res.json().catch(() => ({ ok:false, error:'bad_json' }));
-    return json;
-  }catch(err){
-    const msg = err?.name === 'AbortError'
-      ? 'Koneksi ke server terlalu lama. Coba ulangi atau cek deployment GAS.'
-      : (err?.message || String(err));
-    return { ok:false, error: msg };
+    if(shouldUseJsonpFirst(action)){
+      return await apiJsonp(action, payload);
+    }
+
+    const body = JSON.stringify({ ...payload, action, token: state.token });
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), APP_CONFIG.REQUEST_TIMEOUT_MS);
+    try{
+      // Tanpa custom headers agar tetap simple request dan menghindari preflight.
+      // Jika browser tetap memblokir CORS pada Apps Script, fallback otomatis ke JSONP.
+      const res = await fetch(url, { method:'POST', body, signal: controller.signal });
+      const json = await res.json().catch(() => ({ ok:false, error:'bad_json' }));
+      return json;
+    }catch(err){
+      const msg = err?.name === 'AbortError'
+        ? 'Koneksi ke server terlalu lama. Coba ulangi atau cek deployment GAS.'
+        : (err?.message || String(err));
+      const fallback = await apiJsonp(action, payload);
+      if(fallback && fallback.ok !== false) return fallback;
+      return fallback?.error ? fallback : { ok:false, error: msg };
+    }finally{
+      window.clearTimeout(timer);
+    }
   }finally{
-    window.clearTimeout(timer);
     block(false);
   }
 }
