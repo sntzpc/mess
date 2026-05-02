@@ -58,9 +58,18 @@ function approveAlloc_(user, body){
   const sh=sheet('Guests'); const vals=sh.getDataRange().getValues();
   for(let i=1;i<vals.length;i++){
     if(vals[i][0]===guest_id){
+      const nextMess = mess_alloc!==undefined ? mess_alloc : vals[i][6];
+      const nextRoom = room_alloc!==undefined ? room_alloc : vals[i][7];
+
+      // Validasi otomatis bentrok kamar. Warning masih boleh disimpan, danger ditolak.
+      const check = conflictCheckData_(user, {guest_id:guest_id, mess_alloc:nextMess, room_alloc:nextRoom});
+      if(check && check.ok && check.severity === 'danger'){
+        return json_({ok:false, error:'room_conflict', conflict:check});
+      }
+
       if(mess_alloc!==undefined) sh.getRange(i+1,7).setValue(mess_alloc);
       if(room_alloc!==undefined) sh.getRange(i+1,8).setValue(room_alloc);
-      return json_({ok:true});
+      return json_({ok:true, conflict: check && check.has_conflict ? check : null});
     }
   }
   return json_({ok:false, error:'guest_not_found'});
@@ -72,8 +81,16 @@ function guestApprove_(user, body){
   let rid = null, row = null;
   for(let i=1;i<vals.length;i++){
     if(vals[i][0]===guest_id){
+      rid = vals[i][1]; row = vals[i];
+
+      // Validasi terakhir sebelum approval agar double booking tidak lolos walau frontend lama/cache.
+      const check = conflictCheckData_(user, {guest_id:guest_id, mess_alloc:vals[i][6], room_alloc:vals[i][7]});
+      if(check && check.ok && check.severity === 'danger'){
+        return json_({ok:false, error:'room_conflict', conflict:check});
+      }
+
       gsh.getRange(i+1,9).setValue('approved');
-      rid = vals[i][1]; row = vals[i]; break;
+      break;
     }
   }
   if(!rid) return json_({ok:false, error:'guest_not_found'});

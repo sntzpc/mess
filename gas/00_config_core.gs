@@ -207,6 +207,7 @@ function doPost(e){
       case 'label.agendas':    return labelAgendas_(user, body);
       case 'label.list':       return labelList_(user, body);
       case 'calendar.overview': return calendarOverview_(user, body);
+      case 'conflict.check':   return conflictCheck_(user, body);
 
 
       case 'notify.test':     return notifyTest_(user, body);

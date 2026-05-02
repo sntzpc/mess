@@ -4,6 +4,58 @@ import { fmtDateStr } from '../core/date.js';
 
 function norm(s){ return (s||'').toString().trim(); }
 
+function conflictLines(conflict){
+  if(!conflict) return [];
+  const lines = [];
+  (conflict.dangers||[]).forEach(x=>lines.push('❌ '+x));
+  (conflict.warnings||[]).forEach(x=>lines.push('⚠️ '+x));
+  if((conflict.occupants||[]).length){
+    lines.push('');
+    lines.push('Tamu pada kamar/rentang tanggal yang sama:');
+    (conflict.occupants||[]).slice(0,8).forEach(o=>{
+      lines.push(`- ${o.name||'-'} | ${o.agenda||'-'} | ${o.checkin_plan||'-'} ➜ ${o.checkout_plan||'-'} | ${o.status||'-'}`);
+    });
+    if((conflict.occupants||[]).length > 8) lines.push(`- dan ${(conflict.occupants||[]).length-8} data lainnya`);
+  }
+  if((conflict.same_guest_active||[]).length){
+    lines.push('');
+    lines.push('Reservasi aktif dengan nama tamu yang sama:');
+    (conflict.same_guest_active||[]).slice(0,5).forEach(o=>{
+      lines.push(`- ${o.name||'-'} | ${o.agenda||'-'} | ${o.checkin_plan||'-'} ➜ ${o.checkout_plan||'-'} | ${o.mess||'-'} / ${o.room||'-'}`);
+    });
+  }
+  return lines;
+}
+
+function showConflict(conflict, title='Peringatan Bentrok Kamar'){
+  const msg = [title, '', ...conflictLines(conflict)].join('\n');
+  alert(msg);
+}
+
+async function checkConflictBeforeSave(guest_id, mess_alloc, room_alloc, allowWarningConfirm=true){
+  const ck = await api('conflict.check', {guest_id, mess_alloc, room_alloc});
+  if(!ck.ok){
+    showNotif('Gagal cek bentrok kamar: '+(ck.error||'unknown'), false);
+    return {ok:false, conflict:null};
+  }
+  if(ck.severity === 'danger'){
+    showConflict(ck, 'Bentrok Kamar Tidak Bisa Dilanjutkan');
+    return {ok:false, conflict:ck};
+  }
+  if(ck.severity === 'warning' && allowWarningConfirm){
+    const msg = ['Ditemukan peringatan bentrok kamar.', '', ...conflictLines(ck), '', 'Lanjutkan menyimpan alokasi ini?'].join('\n');
+    if(!confirm(msg)) return {ok:false, conflict:ck};
+  }
+  return {ok:true, conflict: ck.has_conflict ? ck : null};
+}
+
+function handleConflictResponse(res){
+  if(res && res.conflict){
+    if(res.conflict.severity === 'warning') showNotif('Alokasi tersimpan dengan peringatan bentrok. Cek detail sebelum approve.', false);
+    if(res.conflict.severity === 'danger') showConflict(res.conflict, 'Bentrok Kamar');
+  }
+}
+
 // --- helper: format ISO/UTC -> dd/MM/yyyy tanpa bergantung zona waktu browser ---
 function toDmy(val){
   if(!val) return '';
@@ -156,13 +208,29 @@ async function loadApproval(){
           const mess_alloc = selMess.value.trim();
           const room_alloc = selRoom.value.trim();
 
+          const ck = await checkConflictBeforeSave(gid, mess_alloc, room_alloc, false);
+          if(!ck.ok){ throw new Error('Validasi bentrok kamar gagal. Proses Approve Semua dibatalkan.'); }
+          if(ck.conflict && ck.conflict.severity === 'warning'){
+            const msg = ['Ditemukan peringatan pada salah satu alokasi:', '', ...conflictLines(ck.conflict), '', 'Lanjutkan Approve Semua?'].join('\n');
+            if(!confirm(msg)) throw new Error('Approve Semua dibatalkan oleh pengguna.');
+          }
+
           // simpan alokasi (idempoten)
-          await api('approve.alloc', {guest_id: gid, mess_alloc, room_alloc});
+          const al = await api('approve.alloc', {guest_id: gid, mess_alloc, room_alloc});
+          if(!al.ok){
+            if(al.conflict) showConflict(al.conflict, 'Bentrok Kamar Tidak Bisa Disimpan');
+            throw new Error(al.error || 'Gagal menyimpan alokasi');
+          }
+          handleConflictResponse(al);
         }
         // approve semua
         for(const tr of rows){
           const gid = tr.getAttribute('data-guest');
-          await api('guest.approve', {guest_id: gid});
+          const ap = await api('guest.approve', {guest_id: gid});
+          if(!ap.ok){
+            if(ap.conflict) showConflict(ap.conflict, 'Bentrok Kamar Saat Approval');
+            throw new Error(ap.error || 'Gagal approve tamu');
+          }
         }
         showNotif('Semua tamu di-approve');
         // hilangkan kartu dari list
@@ -181,7 +249,13 @@ async function loadApproval(){
         // update rooms dropdown untuk baris ini
         await populateRoomsSelect(tr.querySelector('.sel-room'), mess_alloc, res.checkin_plan, res.checkout_plan, /*preselect*/ '');
         // simpan alokasi mess
-        await api('approve.alloc', {guest_id, mess_alloc});
+        const al = await api('approve.alloc', {guest_id, mess_alloc});
+        if(!al.ok){
+          if(al.conflict) showConflict(al.conflict, 'Bentrok Kamar');
+          showNotif('Gagal alokasi mess: '+(al.error||'unknown'), false);
+          return;
+        }
+        handleConflictResponse(al);
         showNotif('Mess dialokasikan');
       });
     });
@@ -193,7 +267,23 @@ async function loadApproval(){
         // jika kosong, tandai invalid
         if(!room_alloc){ sel.classList.add('is-invalid'); return; }
         sel.classList.remove('is-invalid');
-        await api('approve.alloc', {guest_id, room_alloc});
+        const tr = sel.closest('tr');
+        const mess_alloc = tr.querySelector('.sel-mess')?.value?.trim() || '';
+        const ck = await checkConflictBeforeSave(guest_id, mess_alloc, room_alloc, true);
+        if(!ck.ok){
+          sel.value = '';
+          sel.classList.add('is-invalid');
+          return;
+        }
+        const al = await api('approve.alloc', {guest_id, mess_alloc, room_alloc});
+        if(!al.ok){
+          if(al.conflict) showConflict(al.conflict, 'Bentrok Kamar Tidak Bisa Disimpan');
+          showNotif('Gagal alokasi kamar: '+(al.error||'unknown'), false);
+          sel.value = '';
+          sel.classList.add('is-invalid');
+          return;
+        }
+        handleConflictResponse(al);
         showNotif('Kamar dialokasikan');
       });
     });
@@ -208,8 +298,19 @@ async function loadApproval(){
           showNotif('Pilih No Kamar dulu', false);
           return;
         }
+        const mess_alloc = tr.querySelector('.sel-mess')?.value?.trim() || '';
+        const room_alloc = selRoom.value.trim();
+        const ck = await checkConflictBeforeSave(gid, mess_alloc, room_alloc, true);
+        if(!ck.ok) return;
         const ok = await api('guest.approve', {guest_id: gid});
-        if(ok.ok){ showNotif('Approved'); loadApproval(); }
+        if(ok.ok){
+          if(ok.conflict) handleConflictResponse(ok);
+          showNotif('Approved');
+          loadApproval();
+        }else{
+          if(ok.conflict) showConflict(ok.conflict, 'Bentrok Kamar Saat Approval');
+          showNotif('Gagal approve: '+(ok.error||'unknown'), false);
+        }
       });
     });
 
