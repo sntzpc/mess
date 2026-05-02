@@ -345,3 +345,118 @@ table{white-space:nowrap;margin-bottom:0!important}
 @media(max-width:992px){.cal-month-grid,.cal-week-head{grid-template-columns:repeat(2,minmax(0,1fr))}.cal-week-head{display:none}.cal-day.blank{display:none}.cal-day{min-height:132px}}
 @media(max-width:576px){.cal-month-grid{grid-template-columns:1fr}.cal-day{min-height:auto}}
 @media print{#page-kalender .card{box-shadow:none!important}.cal-day{box-shadow:none!important;break-inside:avoid}.cal-month-grid{gap:5mm}.cal-week-head{gap:5mm}}
+
+/* ===== Revisi Kalender: klik detail, history, dan hari ini aktif ===== */
+.cal-day{
+  width:100%;
+  text-align:left;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+}
+.cal-day:focus-visible{
+  outline:4px solid rgba(37,99,235,.25);
+  outline-offset:2px;
+}
+.cal-day.past{
+  background:linear-gradient(135deg,#f1f5f9,#ffffff)!important;
+  border-color:#cbd5e1!important;
+  color:#475569;
+}
+.cal-day.past::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(148,163,184,.10);
+  pointer-events:none;
+}
+.cal-day.past .cal-date{color:#475569}
+.cal-day.past .cal-agenda{background:rgba(100,116,139,.10);color:#475569}
+.cal-day.active-today{
+  background:linear-gradient(135deg,#dcfce7,#ffffff)!important;
+  border-color:#86efac!important;
+  box-shadow:0 0 0 3px rgba(22,163,74,.18), 0 14px 32px rgba(22,163,74,.12);
+}
+.cal-day.active-today .cal-date{color:#166534}
+.cal-day.active-today .cal-agenda{background:rgba(22,163,74,.10);color:#166534}
+.cal-today-label,
+.cal-past-label{
+  margin-top:3px;
+  font-size:.66rem;
+  font-weight:850;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.cal-today-label{color:#15803d}
+.cal-past-label{color:#64748b}
+.cal-click-hint{
+  position:absolute;
+  right:9px;
+  bottom:7px;
+  font-size:.68rem;
+  font-weight:850;
+  color:#64748b;
+  opacity:.75;
+}
+.cal-day:hover .cal-click-hint{opacity:1;color:#2563eb}
+.cal-row-past td{background:#f8fafc!important;color:#64748b}
+.cal-row-today td{background:#f0fdf4!important}
+.cal-table-date{text-decoration:none;color:#1d4ed8}
+.cal-table-date:hover{text-decoration:underline}
+.cal-detail-modal .modal-content,
+.cal-detail-modal{border-radius:22px;overflow:hidden}
+.cal-detail-status{
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin-bottom:14px;
+  background:linear-gradient(135deg,#f8fafc,#fff);
+}
+.cal-detail-status.today{background:linear-gradient(135deg,#dcfce7,#fff);border-color:#86efac}
+.cal-detail-status.past{background:linear-gradient(135deg,#f1f5f9,#fff);border-color:#cbd5e1}
+.cal-detail-rate{font-size:1.8rem;font-weight:900;line-height:1;color:#0f172a}
+.cal-detail-mini{
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  padding:10px 12px;
+  background:#fff;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  min-height:64px;
+}
+.cal-detail-mini i{font-size:1.35rem;color:#93c5fd}
+.cal-detail-room-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.cal-detail-room{
+  border:1px solid #dbe3ef;
+  border-radius:18px;
+  padding:12px;
+  background:#fff;
+}
+.cal-detail-room.occupied{background:linear-gradient(135deg,#eff6ff,#fff);border-color:#bfdbfe}
+.cal-detail-room.full{background:linear-gradient(135deg,#fffbeb,#fff);border-color:#fde68a}
+.cal-detail-room.conflict{background:linear-gradient(135deg,#fef2f2,#fff);border-color:#fecaca}
+.cal-detail-room-title{font-size:1.2rem;font-weight:900;line-height:1.1;color:#0f172a}
+.cal-detail-guest-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.cal-detail-guest-list li{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(70px,120px);
+  gap:8px;
+  align-items:center;
+  border-top:1px dashed #cbd5e1;
+  padding-top:5px;
+  font-size:.9rem;
+}
+.cal-detail-guest-list .guest-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-detail-guest-list .guest-unit{font-size:.8rem;color:#64748b;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-empty-badges{display:flex;flex-wrap:wrap;gap:6px}
+@media(max-width:992px){.cal-detail-room-grid{grid-template-columns:1fr}}
+@media(max-width:576px){.cal-detail-status{align-items:flex-start}.cal-detail-guest-list li{grid-template-columns:1fr}.cal-detail-guest-list .guest-unit{text-align:left}}

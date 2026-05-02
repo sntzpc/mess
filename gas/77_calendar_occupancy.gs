@@ -132,7 +132,7 @@ function calendarOverview_(user, body){
       var day = dayMap[ymd2];
       if(!day || !day.room_usage[key]) continue;
       day.room_usage[key].used += 1;
-      day.room_usage[key].guests.push(name);
+      day.room_usage[key].guests.push({name:name, unit:unit, title:title, agenda:agenda, checkin_plan:cinDmy, checkout_plan:coutDmy, status:status});
       if(agenda) day.room_usage[key].agendas[agenda] = true;
     }
 
@@ -171,7 +171,7 @@ function calendarOverview_(user, body){
           room: u.room,
           capacity: u.capacity,
           used: u.used,
-          guests: u.guests
+          guests: u.guests.map(function(g){ return g && g.name ? g.name : String(g || ''); })
         });
       }
     });
@@ -206,7 +206,18 @@ function calendarOverview_(user, body){
 
   var days = Object.keys(dayMap).sort().map(function(k){
     var d = dayMap[k];
-    delete d.room_usage; // kecilkan payload
+    d.room_details = Object.keys(d.room_usage).map(function(key){
+      var u = d.room_usage[key];
+      return {
+        mess: u.mess,
+        room: u.room,
+        capacity: u.capacity,
+        used: u.used,
+        guests: u.guests,
+        agendas: u.agendas
+      };
+    });
+    delete d.room_usage; // struktur internal tidak perlu dikirim lagi
     return d;
   });
 

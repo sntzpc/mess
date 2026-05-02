@@ -4,12 +4,13 @@ import { fmtDateStr, todayStr } from '../core/date.js';
 
 let inited = false;
 let lastKey = '';
+let lastCalendarData = null;
 
 const DAY_NAMES = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
 function esc(s){
-  return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function ymNow(){ return todayStr().slice(0,7); }
 function ymShift(ym, delta){
@@ -17,10 +18,10 @@ function ymShift(ym, delta){
   const d = new Date(y, (m || 1) - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
-function dmyToYmd(s){
-  const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if(!m) return '';
-  return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+function ymdToDate(ymd){
+  const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), 12, 0, 0);
 }
 function formatDayTitle(ymd){
   const [y,m,d] = String(ymd).split('-').map(Number);
@@ -45,6 +46,31 @@ function setDefaultFilters(){
     mess.dataset.ready = '1';
   }
 }
+function ensureDetailModal(){
+  let modal = document.getElementById('cal-day-modal');
+  if(modal) return modal;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="modal fade" id="cal-day-modal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content cal-detail-modal">
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title mb-0" id="cal-day-modal-title">Detail Okupansi</h5>
+              <div class="small text-muted" id="cal-day-modal-subtitle"></div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="cal-day-modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap.firstElementChild);
+  return document.getElementById('cal-day-modal');
+}
 
 export function initKalender(){
   if(inited) return;
@@ -57,6 +83,11 @@ export function initKalender(){
   document.getElementById('btn-cal-next')?.addEventListener('click', ()=>{ if(month) month.value = ymShift(month.value, 1); loadKalender(true); });
   month?.addEventListener('change', ()=>loadKalender(true));
   mess?.addEventListener('change', ()=>loadKalender(true));
+  document.getElementById('cal-grid')?.addEventListener('click', (e)=>{
+    const card = e.target.closest('.cal-day[data-date]');
+    if(!card) return;
+    openDayDetail(card.dataset.date);
+  });
 }
 
 export async function loadKalender(force=false){
@@ -69,6 +100,7 @@ export async function loadKalender(force=false){
 
   const r = await api('calendar.overview', { month, mess_name: mess });
   if(!r.ok){ showNotif('Gagal memuat kalender: ' + (r.error || 'server error'), false); return; }
+  lastCalendarData = r;
   renderKalender(r);
 }
 
@@ -137,50 +169,166 @@ function renderGrid(days){
 
 function dayCard(today){
   return function(d){
-    const cls = d.conflict_count ? 'bentrok' : (d.full_rooms ? 'penuh' : (d.used_capacity ? 'terisi' : 'kosong'));
+    const baseCls = d.conflict_count ? 'bentrok' : (d.full_rooms ? 'penuh' : (d.used_capacity ? 'terisi' : 'kosong'));
+    const timeCls = d.date === today ? 'today active-today' : (d.date < today ? 'past' : 'future');
     const agendas = (d.agendas || []).slice(0,3).map(a => `<div class="cal-agenda text-truncate" title="${esc(a.agenda)}">${esc(a.agenda)}</div>`).join('');
     const more = (d.agendas || []).length > 3 ? `<div class="small text-muted">+${(d.agendas||[]).length - 3} agenda lain</div>` : '';
     const emptyRooms = (d.empty_rooms || []).slice(0,3).join(', ');
     return `
-      <div class="cal-day ${cls} ${d.date===today?'today':''}" title="${esc(formatDayTitle(d.date))}">
+      <button type="button" class="cal-day ${baseCls} ${timeCls}" data-date="${esc(d.date)}" title="Klik untuk melihat detail ${esc(formatDayTitle(d.date))}">
         <div class="d-flex justify-content-between align-items-start gap-2">
-          <div class="cal-date">${Number(d.date.slice(8,10))}</div>
-          <span class="badge ${d.conflict_count?'text-bg-danger':(d.full_rooms?'text-bg-warning':'text-bg-light border')}">${esc(d.occupancy_rate || 0)}%</span>
+          <div>
+            <div class="cal-date">${Number(d.date.slice(8,10))}</div>
+            ${d.date === today ? '<div class="cal-today-label">Hari ini</div>' : (d.date < today ? '<div class="cal-past-label">Sudah lewat</div>' : '')}
+          </div>
+          <span class="badge ${d.conflict_count?'text-bg-danger':(d.date===today?'text-bg-success':(d.full_rooms?'text-bg-warning':'text-bg-light border'))}">${esc(d.occupancy_rate || 0)}%</span>
         </div>
         <div class="cal-day-stats">Terisi ${esc(d.used_capacity || 0)}/${esc(d.total_capacity || 0)} • Kosong ${esc(d.empty_rooms_count || 0)}</div>
         ${agendas || '<div class="cal-agenda muted">Tidak ada agenda</div>'}
         ${more}
         ${emptyRooms ? `<div class="cal-empty-room text-truncate">Kosong: ${esc(emptyRooms)}</div>` : ''}
-      </div>`;
+        <div class="cal-click-hint"><i class="bi bi-search"></i> Detail</div>
+      </button>`;
   };
 }
 
 function renderRoomTable(days){
   const host = document.getElementById('cal-room-table');
   if(!host) return;
-  const important = days.filter(d => d.used_capacity || d.full_rooms || d.conflict_count || d.checkins || d.checkouts);
+  const important = days.filter(d => d.used_capacity || d.full_rooms || d.conflict_count || d.checkins || d.checkouts || d.date < todayStr());
   if(!important.length){ host.innerHTML = '<div class="text-muted small">Belum ada okupansi pada bulan ini.</div>'; return; }
   host.innerHTML = `<table class="table table-sm table-hover align-middle">
-    <thead><tr><th>Tanggal</th><th>Terisi</th><th>Kamar Penuh</th><th>Kamar Kosong</th><th>Check-in</th><th>Check-out</th></tr></thead>
+    <thead><tr><th>Tanggal</th><th>Status</th><th>Terisi</th><th>Kamar Penuh</th><th>Kamar Kosong</th><th>Check-in</th><th>Check-out</th></tr></thead>
     <tbody>${important.map(d => `
-      <tr>
-        <td><b>${esc(shortDate(d.date))}</b><div class="small text-muted">${esc(formatDayTitle(d.date).split(',')[0])}</div></td>
+      <tr class="${d.date < todayStr() ? 'cal-row-past' : (d.date === todayStr() ? 'cal-row-today' : '')}">
+        <td><button type="button" class="btn btn-link btn-sm p-0 fw-bold cal-table-date" data-date="${esc(d.date)}">${esc(shortDate(d.date))}</button><div class="small text-muted">${esc(formatDayTitle(d.date).split(',')[0])}</div></td>
+        <td>${d.date === todayStr() ? '<span class="badge text-bg-success">Hari ini</span>' : (d.date < todayStr() ? '<span class="badge text-bg-secondary">History</span>' : '<span class="badge text-bg-light border">Rencana</span>')}</td>
         <td>${esc(d.used_capacity || 0)} / ${esc(d.total_capacity || 0)} <span class="badge text-bg-light border">${esc(d.occupancy_rate || 0)}%</span></td>
         <td>${(d.full_room_names||[]).length ? (d.full_room_names||[]).map(x=>`<span class="badge text-bg-warning me-1">${esc(x)}</span>`).join('') : '<span class="text-muted">-</span>'}</td>
         <td>${(d.empty_rooms||[]).slice(0,6).map(x=>`<span class="badge text-bg-light border me-1">${esc(x)}</span>`).join('') || '<span class="text-muted">-</span>'}${(d.empty_rooms||[]).length>6 ? `<span class="small text-muted">+${d.empty_rooms.length-6}</span>` : ''}</td>
         <td>${esc(d.checkins || 0)}</td>
         <td>${esc(d.checkouts || 0)}</td>
       </tr>`).join('')}</tbody></table>`;
+  host.querySelectorAll('.cal-table-date').forEach(btn => btn.addEventListener('click', ()=>openDayDetail(btn.dataset.date)));
 }
 
 function renderConflicts(rows){
   const host = document.getElementById('cal-conflicts');
   if(!host) return;
   if(!rows.length){ host.innerHTML = '<div class="text-muted small">Tidak ada potensi bentrok / over kapasitas pada periode ini.</div>'; return; }
-  host.innerHTML = rows.map(c => `
+  host.innerHTML = rows.map(c => {
+    const guestNames = (c.guests || []).map(g => typeof g === 'string' ? g : g.name).filter(Boolean);
+    return `
     <div class="cal-list-item conflict">
       <div class="d-flex justify-content-between gap-2"><b>${esc(fmtDateStr(c.date) || c.date)}</b><span class="badge text-bg-danger">${esc(c.used)} / ${esc(c.capacity)}</span></div>
       <div class="small"><b>${esc(c.mess)}</b> • Kamar ${esc(c.room)}</div>
-      <div class="small text-muted">${esc((c.guests || []).slice(0,4).join(', '))}${(c.guests||[]).length>4 ? ' +' + ((c.guests||[]).length-4) : ''}</div>
-    </div>`).join('');
+      <div class="small text-muted">${esc(guestNames.slice(0,4).join(', '))}${guestNames.length>4 ? ' +' + (guestNames.length-4) : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function openDayDetail(ymd){
+  const day = (lastCalendarData?.days || []).find(d => d.date === ymd);
+  if(!day){ showNotif('Detail tanggal tidak ditemukan. Silakan refresh kalender.', false); return; }
+  const modal = ensureDetailModal();
+  document.getElementById('cal-day-modal-title').textContent = `Detail Okupansi • ${formatDayTitle(ymd)}`;
+  const t = todayStr();
+  const statusText = ymd === t ? 'Hari ini / aktif' : (ymd < t ? 'History okupansi tanggal sudah lewat' : 'Rencana okupansi mendatang');
+  document.getElementById('cal-day-modal-subtitle').textContent = statusText;
+  document.getElementById('cal-day-modal-body').innerHTML = renderDayDetailBody(day, ymd, t);
+  const bs = window.bootstrap?.Modal?.getOrCreateInstance(modal);
+  if(bs) bs.show();
+  else modal.classList.add('show');
+}
+
+function renderDayDetailBody(day, ymd, today){
+  const rooms = (day.room_details || []).slice().sort((a,b)=>{
+    const aUsed = Number(a.used || 0), bUsed = Number(b.used || 0);
+    if((bUsed>0) !== (aUsed>0)) return (bUsed>0) - (aUsed>0);
+    const x = String(a.mess).localeCompare(String(b.mess), 'id', {numeric:true, sensitivity:'base'});
+    if(x) return x;
+    return String(a.room).localeCompare(String(b.room), 'id', {numeric:true, sensitivity:'base'});
+  });
+  const occupied = rooms.filter(r => Number(r.used || 0) > 0);
+  const empty = rooms.filter(r => Number(r.used || 0) <= 0);
+  const agendaHtml = (day.agendas || []).length
+    ? (day.agendas || []).map(a => `<span class="badge text-bg-primary me-1 mb-1">${esc(a.agenda)}</span>`).join('')
+    : '<span class="text-muted">Tidak ada agenda berjalan.</span>';
+
+  return `
+    <div class="cal-detail-status ${ymd === today ? 'today' : (ymd < today ? 'past' : 'future')}">
+      <div>
+        <div class="small text-muted">Status Tanggal</div>
+        <div class="fw-bold">${ymd === today ? 'Hari ini sedang aktif' : (ymd < today ? 'Tanggal sudah lewat / history' : 'Tanggal rencana mendatang')}</div>
+      </div>
+      <div class="text-end">
+        <div class="small text-muted">Okupansi</div>
+        <div class="cal-detail-rate">${esc(day.occupancy_rate || 0)}%</div>
+      </div>
+    </div>
+
+    <div class="row g-2 mb-3">
+      ${detailMiniCard('Total Kapasitas', `${day.used_capacity || 0} / ${day.total_capacity || 0}`, 'people')}
+      ${detailMiniCard('Kamar Kosong', day.empty_rooms_count || 0, 'door-open')}
+      ${detailMiniCard('Kamar Penuh', day.full_rooms || 0, 'house-check')}
+      ${detailMiniCard('Potensi Bentrok', day.conflict_count || 0, 'exclamation-triangle')}
+      ${detailMiniCard('Check-in', day.checkins || 0, 'box-arrow-in-right')}
+      ${detailMiniCard('Check-out', day.checkouts || 0, 'box-arrow-right')}
+    </div>
+
+    <div class="mb-3">
+      <div class="fw-bold mb-2">Agenda Berjalan</div>
+      <div>${agendaHtml}</div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div class="fw-bold">Detail Kamar Terisi</div>
+      <div class="small text-muted">${occupied.length} kamar terisi • ${empty.length} kamar kosong</div>
+    </div>
+    <div class="cal-detail-room-grid mb-3">
+      ${occupied.length ? occupied.map(roomDetailCard).join('') : '<div class="text-muted small">Tidak ada kamar yang terisi pada tanggal ini.</div>'}
+    </div>
+
+    <div class="accordion" id="cal-empty-rooms-accordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cal-empty-rooms-collapse">
+            Daftar Kamar Kosong (${empty.length})
+          </button>
+        </h2>
+        <div id="cal-empty-rooms-collapse" class="accordion-collapse collapse" data-bs-parent="#cal-empty-rooms-accordion">
+          <div class="accordion-body">
+            ${empty.length ? `<div class="cal-empty-badges">${empty.map(r => `<span class="badge text-bg-light border">${esc(r.mess)} / ${esc(r.room)}</span>`).join('')}</div>` : '<span class="text-muted">Tidak ada kamar kosong.</span>'}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function detailMiniCard(label, value, icon){
+  return `<div class="col-6 col-md-4 col-xl-2"><div class="cal-detail-mini"><i class="bi bi-${icon}"></i><div><div class="small text-muted">${esc(label)}</div><div class="fw-bold">${esc(value)}</div></div></div></div>`;
+}
+
+function roomDetailCard(r){
+  const used = Number(r.used || 0);
+  const cap = Number(r.capacity || 0);
+  const cls = cap > 0 && used > cap ? 'conflict' : (cap > 0 && used >= cap ? 'full' : 'occupied');
+  const agendaBadges = Object.keys(r.agendas || {}).map(a => `<span class="badge text-bg-light border me-1 mb-1">${esc(a)}</span>`).join('');
+  const guests = (r.guests || []).map((g, idx) => `
+    <li>
+      <span class="guest-name text-truncate">${idx+1}. ${esc(g.name || g)}</span>
+      <span class="guest-unit text-truncate">${esc(g.unit || g.title || '')}</span>
+    </li>`).join('');
+  return `
+    <div class="cal-detail-room ${cls}">
+      <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+        <div>
+          <div class="small text-muted">${esc(r.mess || '-')}</div>
+          <div class="cal-detail-room-title">Kamar ${esc(r.room || '-')}</div>
+        </div>
+        <span class="badge ${cls==='conflict'?'text-bg-danger':(cls==='full'?'text-bg-warning':'text-bg-primary')}">${used}/${cap || '-'}</span>
+      </div>
+      <div class="mb-2">${agendaBadges || '<span class="text-muted small">Tanpa agenda</span>'}</div>
+      <ul class="cal-detail-guest-list">${guests || '<li><span class="text-muted">Tidak ada tamu</span></li>'}</ul>
+    </div>`;
 }
