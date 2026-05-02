@@ -1,4 +1,4 @@
-import { showNotif, monthName } from '../util.js';
+import { showNotif, monthName, fmtTimeWib, fmtDateTimeWib } from '../util.js';
 import { api } from '../api.js';
 
 let journalCache = [];
@@ -51,9 +51,9 @@ function renderJournal(data = []){
       <td>${r.mess||''}</td>
       <td>${r.room||''}</td>
       <td>${r.tgl_masuk||''}</td>
-      <td>${r.jam_masuk||''}</td>
+      <td>${fmtTimeWib(r.jam_masuk)||''}</td>
       <td>${r.tgl_keluar||''}</td>
-      <td>${r.jam_keluar||''}</td>
+      <td>${fmtTimeWib(r.jam_keluar)||''}</td>
     </tr>
   `).join('');
 
@@ -81,7 +81,7 @@ function exportXLSX(){
   const head = [['No.','Nama','Unit','Jabatan','Agenda','Mess','No Kamar','Tgl Masuk','Jam Masuk','Tgl Keluar','Jam Keluar']];
   const body = journalCache.map((r,i)=>[
     i+1,r.name||'',r.unit||'',r.title||'',r.agenda||'',r.mess||'',r.room||'',
-    r.tgl_masuk||'',r.jam_masuk||'',r.tgl_keluar||'',r.jam_keluar||''
+    r.tgl_masuk||'',fmtTimeWib(r.jam_masuk)||'',r.tgl_keluar||'',fmtTimeWib(r.jam_keluar)||''
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...head, ...body]);
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Jurnal');
@@ -103,7 +103,7 @@ function exportPDF(){
   const head = [['No.','Nama','Unit','Jabatan','Agenda','Mess','No Kamar','Tgl Masuk','Jam Masuk','Tgl Keluar','Jam Keluar']];
   const body = journalCache.map((r,i)=>[
     i+1,r.name||'',r.unit||'',r.title||'',r.agenda||'',r.mess||'',r.room||'',
-    r.tgl_masuk||'',r.jam_masuk||'',r.tgl_keluar||'',r.jam_keluar||''
+    r.tgl_masuk||'',fmtTimeWib(r.jam_masuk)||'',r.tgl_keluar||'',fmtTimeWib(r.jam_keluar)||''
   ]);
 
   doc.autoTable({
@@ -113,9 +113,10 @@ function exportPDF(){
       doc.setFontSize(8);
       doc.text(`Halaman ${doc.internal.getCurrentPageInfo().pageNumber} dari ${pageCount}`, doc.internal.pageSize.width-40, 8);
       if(data.pageNumber===pageCount){
-        const now=new Date(); const d=String(now.getDate()).padStart(2,'0'); const m=String(now.getMonth()+1).padStart(2,'0'); const y=now.getFullYear();
-        const hh=String(now.getHours()).padStart(2,'0'); const mm=String(now.getMinutes()).padStart(2,'0');
-        doc.text(`Jurnal dicetak tanggal ${d} ${monthName(m)} ${y} - ${hh}:${mm}`, 14, doc.internal.pageSize.height-6);
+        const stamp = fmtDateTimeWib();
+        const [tgl, jam] = stamp.split(' ');
+        const [d, m, y] = tgl.split('/');
+        doc.text(`Jurnal dicetak tanggal ${d} ${monthName(m)} ${y} - ${jam} WIB`, 14, doc.internal.pageSize.height-6);
       }
     }
   });

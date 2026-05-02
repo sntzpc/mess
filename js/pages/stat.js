@@ -262,18 +262,20 @@ function fmtTimeID(val){
   if(!val) return '-';
   const s = String(val).trim();
   // sudah HH:MM?
-  if(/^\d{2}:\d{2}$/.test(s)) return s;
+  if(/^\d{2}:\d{2}$/.test(s)) return s + ':00';
+  if(/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
   // pola H:MM atau HH:MM(:SS)
-  const m = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  const m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if(m){
     const hh = String(m[1]).padStart(2,'0');
     const mm = m[2];
-    return `${hh}:${mm}`;
+    const ss = String(m[3] || '00').padStart(2,'0');
+    return `${hh}:${mm}:${ss}`;
   }
   // coba parse ISO/Date
   const d = new Date(s);
   if(!isNaN(d)){
-    return d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'Asia/Jakarta' });
+    return d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false, timeZone:'Asia/Jakarta' }).replace(/\./g, ':');
   }
   // fallback
   return s || '-';

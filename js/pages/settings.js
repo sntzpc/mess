@@ -1,4 +1,4 @@
-import { $, showNotif } from '../util.js';
+import { $, showNotif, fmtDateTimeWib } from '../util.js';
 import { api, state, initCommonData, fillMessSelects } from '../api.js';
 
 /* IDENTITAS + CONFIG */
@@ -90,8 +90,7 @@ export function initSettings(){
       const log = (obj)=> {
         try{
           const el = $('#cfg-tg-log');
-          const now = new Date();
-          const ts  = now.toLocaleString('id-ID');
+          const ts  = fmtDateTimeWib() + ' WIB';
           const line = typeof obj==='string' ? obj : JSON.stringify(obj, null, 2);
           if(el){
             el.textContent = `[${ts}] ${line}\n\n` + el.textContent;

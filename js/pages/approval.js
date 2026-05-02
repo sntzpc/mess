@@ -1,5 +1,6 @@
 import { showNotif } from '../util.js';
 import { api, state } from '../api.js';
+import { fmtDateStr } from '../core/date.js';
 
 function norm(s){ return (s||'').toString().trim(); }
 
@@ -92,7 +93,7 @@ async function loadApproval(){
           <div>
             <b>${res.orderer_name}</b> | ${res.orderer_unit} | ${res.orderer_title}<br/>
             Agenda: ${res.agenda}<br/>
-            Rencana: ${toDmy(res.checkin_plan)} ➜ ${toDmy(res.checkout_plan)}
+            Rencana: ${fmtDateStr(res.checkin_plan)} ➜ ${fmtDateStr(res.checkout_plan)}
           </div>
           <div class="text-end d-flex flex-wrap gap-2">
             <button class="btn btn-primary btn-sm btn-approve-all" title="Approve semua tamu">
@@ -275,8 +276,8 @@ async function populateRoomsSelect(selectEl, messName, dateFrom, dateTo, presele
 }
 async function getRoomsForMess(messName, dateFrom, dateTo) {
   const m = norm(messName);
-  const dFrom = norm(dateFrom);
-  const dTo   = norm(dateTo);
+  const dFrom = fmtDateStr(dateFrom);
+  const dTo   = fmtDateStr(dateTo);
   const cacheKey = `${m}|${dFrom}|${dTo}`.toLowerCase(); // hanya key yang lower untuk konsistensi
   if (!m) return [];
   if (roomsCache.has(cacheKey)) return roomsCache.get(cacheKey);
