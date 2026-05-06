@@ -152,6 +152,11 @@ function conflictCheckData_(user, body){
     if(exists) continue;
 
     var gm = conflictFindGuest_(guestVals, stGuestId);
+    var gmStatus = gm ? conflictNormalizeStatus_(gm[8]) : '';
+    // Pengaman tambahan: jika status Guests sudah checkedout/noshow tetapi baris Stays lama belum sempat
+    // terisi checkout_date, tetap jangan dihitung sebagai okupansi aktif.
+    if(gmStatus === 'checkedout' || gmStatus === 'noshow' || gmStatus === 'deleted' || gmStatus === 'rejected') continue;
+
     var gmRes = gm ? (resMap[String(gm[1] || '').trim()] || []) : [];
     occupants.push({
       source: 'actual',
@@ -171,14 +176,15 @@ function conflictCheckData_(user, body){
   }
 
   var projectedUsed = occupants.length + 1;
-  if(occupants.length > 0){
-    warnings.push('Kamar sudah memiliki '+occupants.length+' tamu pada rentang tanggal tersebut.');
-  }
-  if(agendaConflicts.length > 0){
-    warnings.push('Tanggal rencana bertabrakan dengan agenda lain pada kamar yang sama.');
-  }
+
+  // KEBIJAKAN KONFLIK KAMAR BERBASIS KAPASITAS:
+  // - Kamar boleh dipakai bersama selama jumlah tamu pada rentang tanggal belum melebihi kapasitas.
+  // - Tamu yang sudah checkedout/noshow sudah dikeluarkan dari occupants di atas, sehingga tidak lagi
+  //   mengunci kamar walaupun rencana checkout awalnya masih lama.
+  // - Perbedaan agenda pada kamar yang sama hanya menjadi informasi detail, BUKAN konflik, selama kapasitas cukup.
+  // - Konflik/danger baru muncul ketika projectedUsed > roomCapacity.
   if(roomCapacity > 0 && projectedUsed > roomCapacity){
-    dangers.push('Kapasitas kamar penuh/terlampaui. Kapasitas '+roomCapacity+', terpakai setelah ditambahkan menjadi '+projectedUsed+'.');
+    dangers.push('Kapasitas kamar penuh/terlampaui. Kapasitas '+roomCapacity+', sudah terpakai '+occupants.length+', jika ditambahkan menjadi '+projectedUsed+'. Silakan tambah kapasitas kamar di halaman Pengaturan/Master Kamar jika tetap ingin menambah tamu pada kamar ini.');
   }
   if(sameGuestActive.length > 0){
     dangers.push('Tamu yang sama sudah memiliki reservasi aktif pada tanggal yang bertabrakan.');

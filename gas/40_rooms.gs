@@ -34,6 +34,12 @@ function roomsList_(user, body){
     resIdx[rid] = Res[i];
   }
 
+  // Index status guest untuk pengaman bila Stays lama belum terisi checkout_date.
+  var guestStatusIdx = {};
+  for(var gi=1; gi<Gsh.length; gi++){
+    guestStatusIdx[String(Gsh[gi][0] || '').trim()] = String(Gsh[gi][8] || '').trim().toLowerCase().replace(/[\s_\-]+/g, '');
+  }
+
   // ---- 1) OCCUPANCY AKTIF (tamu yang sedang menginap) ----
   var occActive = {};          // key: "mess||room" -> count
   var activeGuestIds = {};     // set guest_id yang sedang aktif
@@ -45,8 +51,14 @@ function roomsList_(user, body){
 
     if(messFilter && mess.toLowerCase() !== messFilterLc) continue;
 
-    // hanya yang belum checkout
+    // hanya yang belum checkout aktual.
     if(chkout) continue;
+
+    // Pengaman tambahan: bila status Guests sudah checkedout/noshow namun Stays belum terupdate,
+    // tetap jangan dihitung sebagai okupansi aktif.
+    var stGuestId = String(s[1] || '').trim();
+    var stStatus = guestStatusIdx[stGuestId] || '';
+    if(stStatus === 'checkedout' || stStatus === 'checkout' || stStatus === 'noshow' || stStatus === 'deleted' || stStatus === 'rejected') continue;
 
     var key = mess + '||' + room;
     occActive[key] = (occActive[key]||0) + 1;
@@ -62,7 +74,7 @@ function roomsList_(user, body){
       var rId   = (g[1]||'').toString().trim();
       var gMess = (g[6]||'').toString().trim();
       var gRoom = (g[7]||'').toString().trim();
-      var gStat = (g[8]||'').toString().trim().toLowerCase();
+      var gStat = (g[8]||'').toString().trim().toLowerCase().replace(/[\s_\-]+/g, '');
 
       // skip kalau belum dialokasikan kamar
       if(!gMess || !gRoom) continue;
@@ -72,7 +84,7 @@ function roomsList_(user, body){
       // PENTING: tamu yang sudah checkout tidak boleh lagi menahan kapasitas kamar.
       // Sebelumnya status checkedout masih ikut dihitung pada occPlanned sehingga
       // dropdown "Pilih No Kamar" tetap disable/penuh walaupun tamu sudah checkout.
-      if(gStat==='deleted' || gStat==='rejected' || gStat==='checkedout' || gStat==='checkout' || gStat==='noshow' || gStat==='no_show') continue;
+      if(gStat==='deleted' || gStat==='rejected' || gStat==='checkedout' || gStat==='checkout' || gStat==='noshow') continue;
 
       // hindari double-count dengan tamu aktif
       if(activeGuestIds[gId]) continue;
@@ -87,8 +99,9 @@ function roomsList_(user, body){
       var rout = parseDMY_(rOut);
       if(!rin || !rout) continue;
 
-      // Overlap jika: (rin <= dTo) && (rout >= dFrom)
-      if(rin.getTime() <= dTo.getTime() && rout.getTime() >= dFrom.getTime()){
+      // Model hotel: tanggal checkout tidak dihitung sebagai malam menginap.
+      // Overlap hanya jika rin < dTo dan dFrom < rout.
+      if(rin.getTime() < dTo.getTime() && dFrom.getTime() < rout.getTime()){
         var key2 = gMess + '||' + gRoom;
         occPlanned[key2] = (occPlanned[key2]||0) + 1;
       }
