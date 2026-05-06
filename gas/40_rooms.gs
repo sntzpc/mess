@@ -68,8 +68,11 @@ function roomsList_(user, body){
       if(!gMess || !gRoom) continue;
       if(messFilter && gMess.toLowerCase() !== messFilterLc) continue;
 
-      // skip status yang tidak relevan
-      if(gStat==='deleted' || gStat==='rejected') continue;
+      // skip status yang tidak relevan untuk kapasitas kamar.
+      // PENTING: tamu yang sudah checkout tidak boleh lagi menahan kapasitas kamar.
+      // Sebelumnya status checkedout masih ikut dihitung pada occPlanned sehingga
+      // dropdown "Pilih No Kamar" tetap disable/penuh walaupun tamu sudah checkout.
+      if(gStat==='deleted' || gStat==='rejected' || gStat==='checkedout' || gStat==='checkout' || gStat==='noshow' || gStat==='no_show') continue;
 
       // hindari double-count dengan tamu aktif
       if(activeGuestIds[gId]) continue;

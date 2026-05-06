@@ -375,3 +375,74 @@ function normalizeResvGuests_(){
 }
 
 
+
+function journalNoShowList_(user, body){
+  function toDmyLocal_(v){
+    if(!v) return '';
+    if(Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return Utilities.formatDate(v, WIB_TZ, DATE_FMT);
+    var s = String(v).trim();
+    if(!s) return '';
+    var dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if(dmy) return ('0'+dmy[1]).slice(-2)+'/'+('0'+dmy[2]).slice(-2)+'/'+dmy[3];
+    var ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(ymd) return ymd[3]+'/'+ymd[2]+'/'+ymd[1];
+    var dt = new Date(s);
+    return isNaN(dt.getTime()) ? '' : Utilities.formatDate(dt, WIB_TZ, DATE_FMT);
+  }
+  function toTimeLocal_(v){
+    if(v === null || v === undefined || v === '') return '';
+    if(Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v.getTime())) return Utilities.formatDate(v, WIB_TZ, TIME_FMT);
+    var s = String(v).trim();
+    if(!s) return '';
+    var m = s.match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+    if(m) return ('0'+m[1]).slice(-2)+':'+('0'+m[2]).slice(-2)+':'+('0'+(m[3]||'00')).slice(-2);
+    var dt = new Date(s);
+    return isNaN(dt.getTime()) ? s : Utilities.formatDate(dt, WIB_TZ, TIME_FMT);
+  }
+  function asDate_(dmy){
+    var m = String(dmy||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!m) return new Date(NaN);
+    return new Date(Number(m[3]), Number(m[2])-1, Number(m[1]));
+  }
+
+  var date_from = toDmyLocal_(body.date_from);
+  var date_to = toDmyLocal_(body.date_to);
+  if(date_from && date_to && asDate_(date_from) > asDate_(date_to)){
+    var tmp = date_from; date_from = date_to; date_to = tmp;
+  }
+  var fromDt = date_from ? asDate_(date_from) : null;
+  var toDt = date_to ? asDate_(date_to) : null;
+
+  var rows = [];
+  var vals = sheet('NoShows').getDataRange().getValues().slice(1);
+  for(var i=0;i<vals.length;i++){
+    var n = vals[i];
+    var guestId = n[1];
+    var mess = String(n[2] || '').trim();
+    var room = String(n[3] || '').trim();
+    var d = toDmyLocal_(n[4]);
+    var t = toTimeLocal_(n[5]);
+    var reason = String(n[6] || '').trim();
+    var markedBy = String(n[7] || '').trim();
+    if(!d) continue;
+    var dd = asDate_(d);
+    if(fromDt && dd < fromDt) continue;
+    if(toDt && dd > toDt) continue;
+    if(user.role === 'mess' && user.mess && mess !== String(user.mess||'').trim()) continue;
+
+    var g = findGuest_(guestId) || {};
+    rows.push({
+      name: g.name || '',
+      unit: g.unit || '',
+      title: g.title || '',
+      agenda: g.agenda || '',
+      mess: mess,
+      room: room,
+      noshow_date: d,
+      noshow_time: t,
+      reason: reason,
+      marked_by: markedBy
+    });
+  }
+  return json_({ok:true, rows: rows});
+}

@@ -75,7 +75,9 @@ function conflictCheckData_(user, body){
     if(!otherGuestId || otherGuestId === guestId) continue;
 
     var status = conflictNormalizeStatus_(row[8]);
-    if(status === 'deleted' || status === 'rejected') continue;
+    // Tamu yang sudah checkout hanya menjadi histori, bukan occupant aktif/rencana.
+    // Jangan dihitung sebagai bentrok kapasitas untuk approval berikutnya.
+    if(status === 'deleted' || status === 'rejected' || status === 'checkedout' || status === 'noshow') continue;
 
     var rid = String(row[1] || '').trim();
     var res = resMap[rid] || [];
@@ -227,6 +229,7 @@ function conflictNormalizeStatus_(v){
   var compact = s.replace(/[\s_\-]+/g, '');
   if(compact === 'partiallyapproved') return 'partiallyapproved';
   if(compact === 'checkedout' || compact === 'checkout' || compact === 'sudahcheckout') return 'checkedout';
+  if(compact === 'noshow' || compact === 'no_show' || compact === 'tidakhadir' || compact === 'batalmenginap') return 'noshow';
   if(compact === 'checkedin' || compact === 'checkin' || compact === 'sudahcheckin') return 'checkedin';
   return compact || s;
 }

@@ -18,6 +18,7 @@ function initOnce_(){
   headers(sheet('Reservations'), ['id','orderer_name','orderer_unit','orderer_title','agenda','mess_selected','checkin_plan','checkout_plan','status','created_at']);
   headers(sheet('Guests'), ['id','reservation_id','name','unit','title','gender','mess_alloc','room_alloc','status']); // status: pending/approved/checkedin/checkedout/deleted/rejected
   headers(sheet('Stays'), ['id','guest_id','mess','room','checkin_date','checkin_time','checkout_date','checkout_time']);
+  headers(sheet('NoShows'), ['id','guest_id','mess','room','noshow_date','noshow_time','reason','marked_by']);
   headers(sheet('Config'), ['key','value']); // telegram_bot_token, telegram_admin_id, gas_url
   // seed admin if not exists
   const u = sheet('Users'); const data = u.getDataRange().getValues();
@@ -238,8 +239,10 @@ function handleRequest_(e){
       case 'mess.queue':       return messQueue_(user, body);
       case 'guest.checkin':    return guestCheckin_(user, body);
       case 'guest.checkout':   return guestCheckout_(user, body);
+      case 'guest.noshow':     return guestNoShow_(user, body);
 
       case 'journal.list':     return journalList_(user, body);
+      case 'journal.noshow.list': return journalNoShowList_(user, body);
       case 'stats.overview':   return statsOverview_(user, body);
       case 'stats.dashboard':  return statsDashboard_(user, body);
       case 'label.agendas':    return labelAgendas_(user, body);

@@ -103,13 +103,16 @@ function toDmy(val){
 
 
 // cache kamar per mess agar hemat request
-const roomsCache = new Map(); // key: messName -> [{room_name, status, ...}]
+const roomsCache = new Map(); // key -> {ts, rows:[{room_name, status, ...}]} (TTL pendek)
 
 export function showApproval(){
   loadApproval();
 }
 
 async function loadApproval(){
+  // Selalu bersihkan cache kamar saat halaman approval dimuat ulang.
+  // Ini memastikan status kapasitas terbaru terbaca setelah Admin/MESS melakukan Check-Out.
+  roomsCache.clear();
   const r = await api('reserve.list', {});
   const wrap = document.getElementById('approval-list'); wrap.innerHTML='';
   (r.rows||[]).forEach(res=>{
@@ -381,12 +384,18 @@ async function getRoomsForMess(messName, dateFrom, dateTo) {
   const dTo   = fmtDateStr(dateTo);
   const cacheKey = `${m}|${dFrom}|${dTo}`.toLowerCase(); // hanya key yang lower untuk konsistensi
   if (!m) return [];
-  if (roomsCache.has(cacheKey)) return roomsCache.get(cacheKey);
+
+  // Cache dibuat pendek agar dropdown tetap ringan, tetapi cepat refresh setelah checkout.
+  // Struktur cache lama hanya menyimpan array selamanya sehingga kamar bisa tetap tampil [penuh]
+  // walaupun Stays sudah memiliki checkout_date.
+  const cached = roomsCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && (now - cached.ts) < 5000) return cached.rows;
 
   // PENTING: kirim mess_name apa adanya (JANGAN di-lowercase)
-  const r = await api('rooms.list', { mess_name: m, date_from: dFrom, date_to: dTo });
+  const r = await api('rooms.list', { mess_name: m, date_from: dFrom, date_to: dTo, _ts: now });
   const rooms = r.ok ? (r.rows || []) : [];
-  roomsCache.set(cacheKey, rooms);
+  roomsCache.set(cacheKey, { ts: now, rows: rooms });
   return rooms;
 }
 
@@ -398,11 +407,14 @@ async function fillRoomsOnce(selectEl, messName, dateFrom, dateTo, preselect){
     const usedTot   = Number(room.used_total ?? room.used ?? 0);
     const gradeStr  = room.grade ? `, ${room.grade}` : '';
     const tagSisa   = isFinite(remaining) ? `, sisa ${remaining}` : '';
-    const penuh     = (cap > 0 && remaining <= 0);
+    const selected  = preselect === room.room_name;
+    // Jika kamar yang sedang tersimpan sudah penuh karena alokasi tamu itu sendiri,
+    // tetap izinkan option terpilih agar user bisa melihat/mengubahnya dengan normal.
+    const penuh     = (cap > 0 && remaining <= 0 && !selected);
 
     const label = `${room.room_name} (kap ${cap}${gradeStr}${tagSisa})${penuh ? ' [penuh]' : ''}`;
 
-    return `<option value="${room.room_name}" ${penuh?'disabled':''} ${preselect===room.room_name?'selected':''}>${label}</option>`;
+    return `<option value="${room.room_name}" ${penuh?'disabled':''} ${selected?'selected':''}>${label}</option>`;
   }).join('');
 
   if(options){

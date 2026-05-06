@@ -297,7 +297,13 @@
             class="form-control"></div>
         <div class="col-sm-3"><label class="form-label">sampai</label><input id="jr-to" type="date"
             class="form-control"></div>
-        <div class="col-sm-6 text-end">
+        <div class="col-sm-3"><label class="form-label">Jenis Jurnal</label>
+          <select id="jr-type" class="form-select">
+            <option value="stay">Jurnal Check-In/Out</option>
+            <option value="noshow">Jurnal No Show</option>
+          </select>
+        </div>
+        <div class="col-sm-3 text-end">
           <button id="btn-jr-show" class="btn btn-primary">Tampilkan</button>
           <button id="btn-jr-xlsx" class="btn btn-success">Export Excel</button>
           <button id="btn-jr-pdf" class="btn btn-danger">Export PDF</button>

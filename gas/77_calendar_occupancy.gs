@@ -186,7 +186,7 @@ function calendarOverview_(user, body){
   //    dari Stays atau fallback dari Guests + Reservations jika Stays belum lengkap.
   Object.keys(guestMap).forEach(function(gid){
     var guest = guestMap[gid];
-    if(guest.status === 'deleted' || guest.status === 'rejected' || guest.status === 'checkedout') return;
+    if(guest.status === 'deleted' || guest.status === 'rejected' || guest.status === 'checkedout' || guest.status === 'noshow') return;
     if(messFilter && guest.mess_alloc && guest.mess_alloc !== messFilter) return;
 
     var ciYmd = calDmyToYmd_(guest.plan_checkin);
@@ -211,7 +211,7 @@ function calendarOverview_(user, body){
     var sv = stayVals[st];
     var stayGuestId = String(sv[1] || '').trim();
     var guest = guestMap[stayGuestId] || {guest_id:stayGuestId, name:'', unit:'', title:'', gender:'', status:'', agenda:''};
-    if(guest.status === 'deleted' || guest.status === 'rejected') continue;
+    if(guest.status === 'deleted' || guest.status === 'rejected' || guest.status === 'noshow') continue;
 
     var stayMess = String(sv[2] || guest.mess_alloc || '').trim();
     var stayRoom = String(sv[3] || guest.room_alloc || '').trim();
@@ -343,6 +343,7 @@ function calNormalizeGuestStatus_(v){
   var s = String(v || '').trim().toLowerCase();
   var compact = s.replace(/[\s_\-]+/g, '');
   if(compact === 'checkout' || compact === 'checkedout' || compact === 'sudahcheckout') return 'checkedout';
+  if(compact === 'noshow' || compact === 'no_show' || compact === 'tidakhadir' || compact === 'batalmenginap') return 'noshow';
   if(compact === 'checkin' || compact === 'checkedin' || compact === 'sudahcheckin') return 'checkedin';
   return compact || s;
 }
